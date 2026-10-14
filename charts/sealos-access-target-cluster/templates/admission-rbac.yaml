@@ -1,0 +1,65 @@
+{{- if .Values.admission.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.admission.name }}
+  namespace: {{ .Values.namespaces.controller }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+{{ include "sealos-access-target-cluster.admissionSelectorLabels" . | nindent 4 }}
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.admission.name }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+rules:
+- apiGroups: [user.sealos.io]
+  resources: [internalusers]
+  verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.admission.name }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.admission.name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.admission.name }}
+  namespace: {{ .Values.namespaces.controller }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.admission.name }}
+  namespace: {{ .Values.namespaces.broker }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+rules:
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases]
+  verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.admission.name }}
+  namespace: {{ .Values.namespaces.broker }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Values.admission.name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.admission.name }}
+  namespace: {{ .Values.namespaces.controller }}
+{{- end }}

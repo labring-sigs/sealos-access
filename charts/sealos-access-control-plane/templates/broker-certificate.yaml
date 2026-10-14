@@ -1,0 +1,33 @@
+{{- if and .Values.broker.enabled .Values.broker.tls.createCertificate }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "sealos-access-control-plane.brokerTLSIssuerName" . }}
+  namespace: {{ .Values.broker.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.broker.tls.certificateName }}
+  namespace: {{ .Values.broker.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+spec:
+  secretName: {{ .Values.broker.tls.secretName }}
+  dnsNames:
+{{- range (default (list (printf "%s.%s.svc" .Values.broker.name .Values.broker.namespace) (printf "%s.%s.svc.cluster.local" .Values.broker.name .Values.broker.namespace)) .Values.broker.tls.dnsNames) }}
+  - {{ . | quote }}
+{{- end }}
+  duration: {{ .Values.broker.tls.duration }}
+  renewBefore: {{ .Values.broker.tls.renewBefore }}
+  privateKey:
+    algorithm: {{ .Values.broker.tls.privateKeyAlgorithm }}
+    size: {{ .Values.broker.tls.privateKeySize }}
+  issuerRef:
+    name: {{ include "sealos-access-control-plane.brokerTLSIssuerName" . }}
+    kind: Issuer
+{{- end }}

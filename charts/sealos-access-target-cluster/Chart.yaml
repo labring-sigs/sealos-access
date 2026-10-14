@@ -1,0 +1,7 @@
+apiVersion: v2
+name: sealos-access-target-cluster
+description: Target-cluster resources for Sealos Access
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.25.0-0"

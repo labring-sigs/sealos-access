@@ -1,0 +1,98 @@
+{{- if .Values.targetBroker.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.targetBroker.name }}
+  namespace: {{ .Values.namespaces.broker }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.targetBroker.clusterRoleName }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+rules:
+- apiGroups: [user.sealos.io]
+  resources: [internalusers]
+  verbs: [get]
+- apiGroups: [authentication.k8s.io]
+  resources: [tokenreviews]
+  verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.targetBroker.clusterRoleName }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.targetBroker.clusterRoleName }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.targetBroker.name }}
+  namespace: {{ .Values.namespaces.broker }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.targetBroker.leaseRoleName }}
+  namespace: {{ .Values.namespaces.broker }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+rules:
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases]
+  verbs: [get, create]
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases/status]
+  verbs: [get, update, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.targetBroker.leaseRoleName }}
+  namespace: {{ .Values.namespaces.broker }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Values.targetBroker.leaseRoleName }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.targetBroker.name }}
+  namespace: {{ .Values.namespaces.broker }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.targetBroker.tokenRequestRoleName }}
+  namespace: {{ .Values.namespaces.user }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+rules:
+- apiGroups: [""]
+  resources: [serviceaccounts/token]
+  verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.targetBroker.tokenRequestRoleName }}
+  namespace: {{ .Values.namespaces.user }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ .Values.targetBroker.tokenRequestRoleName }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.targetBroker.name }}
+  namespace: {{ .Values.namespaces.broker }}
+{{- end }}

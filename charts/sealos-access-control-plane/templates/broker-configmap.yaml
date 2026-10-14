@@ -1,0 +1,23 @@
+{{- if .Values.broker.enabled }}
+{{- $oidc := dict "issuer" .Values.broker.oidc.issuer "audience" .Values.broker.oidc.audience "jwksURL" .Values.broker.oidc.jwksURL "caFile" .Values.broker.oidc.caFile "serverName" .Values.broker.oidc.serverName -}}
+{{- $brokerConfig := dict "version" 1 "oidc" $oidc "targets" .Values.broker.targets -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-config" .Values.broker.name }}
+  namespace: {{ .Values.broker.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+{{ include "sealos-access-control-plane.brokerSelectorLabels" . | nindent 4 }}
+data:
+  config-file: /etc/broker/config/broker.yaml
+  broker.yaml: |
+{{ toYaml $brokerConfig | indent 4 }}
+  request-rate-limit: {{ .Values.broker.requestRateLimit | quote }}
+  request-rate-burst: {{ .Values.broker.requestRateBurst | quote }}
+  trusted-proxy-cidrs: {{ .Values.broker.trustedProxyCIDRs | quote }}
+  allowed-client-cidrs: {{ .Values.broker.allowedClientCIDRs | quote }}
+  trusted-client-ip-header: {{ .Values.broker.trustedClientIPHeader | quote }}
+  tls-cert-file: /etc/broker/tls/tls.crt
+  tls-key-file: /etc/broker/tls/tls.key
+{{- end }}

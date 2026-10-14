@@ -1,0 +1,11 @@
+{{- if .Values.adapter.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.adapter.name }}
+  namespace: {{ .Values.adapter.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+{{ include "sealos-access-control-plane.adapterSelectorLabels" . | nindent 4 }}
+automountServiceAccountToken: false
+{{- end }}

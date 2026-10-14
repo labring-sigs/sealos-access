@@ -1,0 +1,33 @@
+{{- if and .Values.admission.enabled .Values.admission.tls.createCertificate }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "sealos-access-target-cluster.admissionTLSIssuerName" . }}
+  namespace: {{ .Values.namespaces.controller }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.admission.tls.certificateName }}
+  namespace: {{ .Values.namespaces.controller }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+spec:
+  secretName: {{ .Values.admission.tls.secretName }}
+  dnsNames:
+{{- range (default (list (printf "%s.%s.svc" .Values.admission.name .Values.namespaces.controller) (printf "%s.%s.svc.cluster.local" .Values.admission.name .Values.namespaces.controller)) .Values.admission.tls.dnsNames) }}
+  - {{ . | quote }}
+{{- end }}
+  duration: {{ .Values.admission.tls.duration }}
+  renewBefore: {{ .Values.admission.tls.renewBefore }}
+  privateKey:
+    algorithm: {{ .Values.admission.tls.privateKeyAlgorithm }}
+    size: {{ .Values.admission.tls.privateKeySize }}
+  issuerRef:
+    name: {{ include "sealos-access-target-cluster.admissionTLSIssuerName" . }}
+    kind: Issuer
+{{- end }}

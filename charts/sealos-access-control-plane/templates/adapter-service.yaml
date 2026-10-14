@@ -1,0 +1,18 @@
+{{- if .Values.adapter.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.adapter.name }}
+  namespace: {{ .Values.adapter.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+{{ include "sealos-access-control-plane.adapterSelectorLabels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - name: https
+    port: 443
+    targetPort: https
+  selector:
+{{ include "sealos-access-control-plane.adapterSelectorLabels" . | nindent 4 }}
+{{- end }}

@@ -1,0 +1,17 @@
+{{- if .Values.controller.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-user-controller-webhook
+  namespace: {{ .Values.namespaces.controller }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+{{ include "sealos-access-target-cluster.controllerSelectorLabels" . | nindent 4 }}
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: webhook-server
+  selector:
+{{ include "sealos-access-target-cluster.controllerSelectorLabels" . | nindent 4 }}
+{{- end }}

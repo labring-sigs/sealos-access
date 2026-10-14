@@ -1,0 +1,23 @@
+{{- if .Values.adapter.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-config" .Values.adapter.name }}
+  namespace: {{ .Values.adapter.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+{{ include "sealos-access-control-plane.adapterSelectorLabels" . | nindent 4 }}
+data:
+  listen-address: :8443
+  broker-url: {{ default (printf "https://%s.%s.svc" .Values.broker.name .Values.broker.namespace) .Values.adapter.broker.url | quote }}
+  broker-cluster-id: {{ .Values.adapter.clusterID | quote }}
+  broker-server-name: {{ .Values.adapter.broker.serverName | quote }}
+  broker-ca-file: {{ .Values.adapter.broker.caFile | quote }}
+  broker-bearer-token-file: {{ .Values.adapter.broker.bearerTokenFile | quote }}
+  smtp-host: {{ .Values.adapter.smtp.host | quote }}
+  smtp-port: {{ .Values.adapter.smtp.port | quote }}
+  smtp-from: {{ .Values.adapter.smtp.from | quote }}
+  smtp-subject: {{ .Values.adapter.smtp.subject | quote }}
+  adapter-tls-cert-file: /etc/adapter/tls/tls.crt
+  adapter-tls-key-file: /etc/adapter/tls/tls.key
+{{- end }}
