@@ -1,0 +1,14 @@
+{{- if .Values.networkPolicy.accessSystemDefaultDeny }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: access-system-default-deny
+  namespace: {{ .Values.namespaces.user }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+{{- end }}

@@ -1,0 +1,33 @@
+{{- if and .Values.controller.enabled .Values.controller.tls.createCertificate }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "sealos-access-target-cluster.controllerTLSIssuerName" . }}
+  namespace: {{ .Values.namespaces.controller }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.controller.tls.certificateName }}
+  namespace: {{ .Values.namespaces.controller }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+spec:
+  secretName: {{ .Values.controller.tls.secretName }}
+  dnsNames:
+{{- range (default (list (printf "%s.%s.svc" "internal-user-controller-webhook" .Values.namespaces.controller) (printf "%s.%s.svc.cluster.local" "internal-user-controller-webhook" .Values.namespaces.controller)) .Values.controller.tls.dnsNames) }}
+  - {{ . | quote }}
+{{- end }}
+  duration: {{ .Values.controller.tls.duration }}
+  renewBefore: {{ .Values.controller.tls.renewBefore }}
+  privateKey:
+    algorithm: {{ .Values.controller.tls.privateKeyAlgorithm }}
+    size: {{ .Values.controller.tls.privateKeySize }}
+  issuerRef:
+    name: {{ include "sealos-access-target-cluster.controllerTLSIssuerName" . }}
+    kind: Issuer
+{{- end }}

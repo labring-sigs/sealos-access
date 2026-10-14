@@ -1,0 +1,81 @@
+{{- if and .Values.broker.enabled .Values.broker.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-default-deny" .Values.broker.name }}
+  namespace: {{ .Values.broker.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-ingress" .Values.broker.name }}
+  namespace: {{ .Values.broker.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+{{ include "sealos-access-control-plane.brokerSelectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+{{ toYaml .Values.broker.networkPolicy.gatewayNamespaceSelector | nindent 10 }}
+      podSelector:
+        matchLabels:
+{{ toYaml .Values.broker.networkPolicy.gatewayPodSelector | nindent 10 }}
+    ports:
+    - protocol: TCP
+      port: 8443
+  {{- if .Values.adapter.enabled }}
+  - from:
+    - namespaceSelector:
+        matchLabels:
+{{ toYaml .Values.broker.networkPolicy.adapterNamespaceSelector | nindent 10 }}
+      podSelector:
+        matchLabels:
+{{ toYaml .Values.broker.networkPolicy.adapterPodSelector | nindent 10 }}
+    ports:
+    - protocol: TCP
+      port: 8443
+  {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-egress" .Values.broker.name }}
+  namespace: {{ .Values.broker.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+{{ include "sealos-access-control-plane.brokerSelectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+{{- with .Values.broker.networkPolicy.additionalEgress }}
+{{ toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,8 @@
+# Replace the issuer with the canonical OIDC issuer used by the control plane.
+controller:
+  oidcIssuers: https://login.example.internal
+
+# Keep the target-side Broker identity names aligned with the control-plane
+# target credential provisioning process.
+targetBroker:
+  name: internal-credential-broker

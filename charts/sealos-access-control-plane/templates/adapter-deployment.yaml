@@ -1,0 +1,179 @@
+{{- if .Values.adapter.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.adapter.name }}
+  namespace: {{ .Values.adapter.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+{{ include "sealos-access-control-plane.adapterSelectorLabels" . | nindent 4 }}
+  {{- with .Values.adapter.podAnnotations }}
+  annotations:
+{{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.adapter.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "sealos-access-control-plane.adapterSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "sealos-access-control-plane.adapterSelectorLabels" . | nindent 8 }}
+{{ include "sealos-access-control-plane.labels" . | nindent 8 }}
+      {{- with .Values.adapter.podAnnotations }}
+      annotations:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.adapter.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.adapter.name }}
+      automountServiceAccountToken: false
+      securityContext:
+{{ toYaml .Values.adapter.podSecurityContext | nindent 8 }}
+      containers:
+      - name: adapter
+        image: "{{ .Values.adapter.image.repository }}:{{ .Values.adapter.image.tag }}"
+        imagePullPolicy: {{ .Values.adapter.image.pullPolicy }}
+        command:
+        - /approval-adapter
+        ports:
+        - name: https
+          containerPort: 8443
+        env:
+        - name: INTERNAL_USER_APPROVAL_ADAPTER_LISTEN_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: listen-address
+        - name: BROKER_URL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: broker-url
+        - name: BROKER_CLUSTER_ID
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: broker-cluster-id
+        - name: BROKER_SERVER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: broker-server-name
+        - name: BROKER_CA_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: broker-ca-file
+        - name: BROKER_BEARER_TOKEN_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: broker-bearer-token-file
+        - name: SMTP_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: smtp-host
+        - name: SMTP_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: smtp-port
+        - name: SMTP_FROM
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: smtp-from
+        - name: SMTP_SUBJECT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: smtp-subject
+        - name: SMTP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.adapter.broker.bearerTokenSecretName }}
+              key: smtp-username
+              optional: true
+        - name: SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.adapter.broker.bearerTokenSecretName }}
+              key: smtp-password
+              optional: true
+        - name: ADAPTER_TLS_CERT_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: adapter-tls-cert-file
+        - name: ADAPTER_TLS_KEY_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.adapter.name }}
+              key: adapter-tls-key-file
+        {{- with .Values.adapter.extraEnv }}
+{{ toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.adapter.extraEnvFrom }}
+        envFrom:
+{{ toYaml . | nindent 8 }}
+        {{- end }}
+        securityContext:
+{{ toYaml .Values.adapter.containerSecurityContext | nindent 10 }}
+        resources:
+{{ toYaml .Values.adapter.resources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /healthz
+            port: https
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /healthz
+            port: https
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        volumeMounts:
+        - name: adapter-tls
+          mountPath: /etc/adapter/tls
+          readOnly: true
+        - name: broker-ca
+          mountPath: /etc/adapter/broker-ca
+          readOnly: true
+        - name: broker-token
+          mountPath: /etc/adapter/broker-token
+          readOnly: true
+      volumes:
+      - name: adapter-tls
+        secret:
+          secretName: {{ .Values.adapter.tls.secretName }}
+      - name: broker-ca
+        secret:
+          secretName: {{ .Values.adapter.broker.caSecretName }}
+      - name: broker-token
+        secret:
+          secretName: {{ .Values.adapter.broker.bearerTokenSecretName }}
+          items:
+          - key: {{ .Values.adapter.broker.bearerTokenSecretKey }}
+            path: token
+      {{- with .Values.adapter.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.adapter.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.adapter.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

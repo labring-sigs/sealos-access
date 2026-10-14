@@ -1,0 +1,79 @@
+{{- if and .Values.adapter.enabled .Values.adapter.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-default-deny" .Values.adapter.name }}
+  namespace: {{ .Values.adapter.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-ingress" .Values.adapter.name }}
+  namespace: {{ .Values.adapter.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+{{ include "sealos-access-control-plane.adapterSelectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+{{ toYaml .Values.adapter.networkPolicy.gatewayNamespaceSelector | nindent 10 }}
+      podSelector:
+        matchLabels:
+{{ toYaml .Values.adapter.networkPolicy.gatewayPodSelector | nindent 10 }}
+    ports:
+    - protocol: TCP
+      port: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-egress" .Values.adapter.name }}
+  namespace: {{ .Values.adapter.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+{{ include "sealos-access-control-plane.adapterSelectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  - to:
+    - namespaceSelector:
+        matchLabels:
+{{ toYaml .Values.adapter.networkPolicy.brokerNamespaceSelector | nindent 10 }}
+      podSelector:
+        matchLabels:
+{{ toYaml .Values.adapter.networkPolicy.brokerPodSelector | nindent 10 }}
+    ports:
+    - protocol: TCP
+      port: 443
+{{- with .Values.adapter.networkPolicy.additionalEgress }}
+{{ toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}

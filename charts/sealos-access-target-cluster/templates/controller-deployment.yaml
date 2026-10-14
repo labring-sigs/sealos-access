@@ -1,0 +1,93 @@
+{{- if .Values.controller.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.controller.name }}
+  namespace: {{ .Values.namespaces.controller }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+{{ include "sealos-access-target-cluster.controllerSelectorLabels" . | nindent 4 }}
+  {{- with .Values.controller.podAnnotations }}
+  annotations:
+{{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.controller.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "sealos-access-target-cluster.controllerSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "sealos-access-target-cluster.controllerSelectorLabels" . | nindent 8 }}
+{{ include "sealos-access-target-cluster.labels" . | nindent 8 }}
+      {{- with .Values.controller.podAnnotations }}
+      annotations:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.controller.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.controller.name }}
+      automountServiceAccountToken: true
+      securityContext:
+{{ toYaml .Values.controller.podSecurityContext | nindent 8 }}
+      containers:
+      - name: controller
+        image: "{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}"
+        imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+        command:
+        - /internal-user-controller
+        args:
+        - --leader-elect
+        - --health-probe-bind-address=:8081
+        ports:
+        - name: webhook-server
+          containerPort: 9443
+        - name: health
+          containerPort: 8081
+        env:
+        - name: INTERNAL_USER_OIDC_ISSUERS
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.controller.name }}
+              key: oidc-issuers
+        securityContext:
+{{ toYaml .Values.controller.containerSecurityContext | nindent 10 }}
+        resources:
+{{ toYaml .Values.controller.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: health
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: webhook-certs
+          mountPath: /tmp/k8s-webhook-server/serving-certs
+          readOnly: true
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: {{ .Values.controller.tls.secretName }}
+      {{- with .Values.controller.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.controller.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

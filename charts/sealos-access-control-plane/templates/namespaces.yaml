@@ -1,0 +1,17 @@
+{{- if and .Values.namespaces.create .Values.broker.enabled .Values.broker.namespace (ne .Values.broker.namespace .Release.Namespace) }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.broker.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+{{- end }}
+{{- if and .Values.namespaces.create .Values.adapter.enabled .Values.adapter.namespace (ne .Values.adapter.namespace .Release.Namespace) }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.adapter.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+{{- end }}

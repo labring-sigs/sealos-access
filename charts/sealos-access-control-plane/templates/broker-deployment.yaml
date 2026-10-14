@@ -1,0 +1,169 @@
+{{- if .Values.broker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.broker.name }}
+  namespace: {{ .Values.broker.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+{{ include "sealos-access-control-plane.brokerSelectorLabels" . | nindent 4 }}
+  {{- with .Values.broker.podAnnotations }}
+  annotations:
+{{ toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.broker.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "sealos-access-control-plane.brokerSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "sealos-access-control-plane.brokerSelectorLabels" . | nindent 8 }}
+{{ include "sealos-access-control-plane.labels" . | nindent 8 }}
+      {{- with .Values.broker.podAnnotations }}
+      annotations:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.broker.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ .Values.broker.name }}
+      automountServiceAccountToken: false
+      securityContext:
+{{ toYaml .Values.broker.podSecurityContext | nindent 8 }}
+      containers:
+      - name: broker
+        image: "{{ .Values.broker.image.repository }}:{{ .Values.broker.image.tag }}"
+        imagePullPolicy: {{ .Values.broker.image.pullPolicy }}
+        command:
+        - /broker
+        ports:
+        - name: https
+          containerPort: 8443
+        env:
+        - name: BROKER_CONFIG_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.broker.name }}
+              key: config-file
+        - name: BROKER_ADMIN_GROUP
+          value: {{ .Values.broker.adminGroup | quote }}
+        - name: BROKER_REQUEST_RATE_LIMIT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.broker.name }}
+              key: request-rate-limit
+        - name: BROKER_REQUEST_RATE_BURST
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.broker.name }}
+              key: request-rate-burst
+        - name: BROKER_TRUSTED_PROXY_CIDRS
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.broker.name }}
+              key: trusted-proxy-cidrs
+        - name: BROKER_ALLOWED_CLIENT_CIDRS
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.broker.name }}
+              key: allowed-client-cidrs
+        - name: BROKER_TRUSTED_CLIENT_IP_HEADER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.broker.name }}
+              key: trusted-client-ip-header
+        - name: BROKER_TLS_CERT_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.broker.name }}
+              key: tls-cert-file
+        - name: BROKER_TLS_KEY_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ printf "%s-config" .Values.broker.name }}
+              key: tls-key-file
+        securityContext:
+{{ toYaml .Values.broker.containerSecurityContext | nindent 10 }}
+        resources:
+{{ toYaml .Values.broker.resources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /healthz
+            port: https
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /healthz
+            port: https
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        volumeMounts:
+        - name: broker-tls
+          mountPath: /etc/broker/tls
+          readOnly: true
+        - name: broker-config
+          mountPath: /etc/broker/config
+          readOnly: true
+        - name: oidc-ca
+          mountPath: /etc/broker/oidc-ca
+          readOnly: true
+        - name: target-credentials
+          mountPath: /etc/broker/targets
+          readOnly: true
+        {{- if .Values.broker.projectedServiceAccountToken.enabled }}
+        - name: kube-api-token
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
+        {{- end }}
+      volumes:
+      - name: broker-tls
+        secret:
+          secretName: {{ .Values.broker.tls.secretName }}
+      - name: broker-config
+        configMap:
+          name: {{ printf "%s-config" .Values.broker.name }}
+          items:
+          - key: broker.yaml
+            path: broker.yaml
+      - name: oidc-ca
+        secret:
+          secretName: {{ .Values.broker.oidcCASecretName }}
+          optional: true
+      - name: target-credentials
+        secret:
+          secretName: {{ .Values.broker.targetCredentialsSecretName }}
+          optional: true
+      {{- if .Values.broker.projectedServiceAccountToken.enabled }}
+      - name: kube-api-token
+        projected:
+          sources:
+          - serviceAccountToken:
+              path: token
+              audience: {{ .Values.broker.projectedServiceAccountToken.audience | quote }}
+              expirationSeconds: {{ .Values.broker.projectedServiceAccountToken.expirationSeconds }}
+          - configMap:
+              name: kube-root-ca.crt
+              items:
+              - key: ca.crt
+                path: ca.crt
+      {{- end }}
+      {{- with .Values.broker.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.broker.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.broker.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

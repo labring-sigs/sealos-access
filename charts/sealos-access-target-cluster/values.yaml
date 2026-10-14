@@ -1,0 +1,115 @@
+commonLabels: {}
+
+namespaces:
+  create: true
+  controller: access-controller-system
+  user: access-system
+  broker: access-broker-system
+
+controller:
+  enabled: true
+  name: internal-user-controller
+  replicaCount: 1
+  image:
+    repository: ghcr.io/labring/sealos-internal-user-controller
+    tag: latest
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  oidcIssuers: https://replace-with-allowlisted-oidc-issuer.example
+  leaderElectionRoleName: internal-user-controller-leader-election
+  resourceRoleName: internal-user-controller-resources
+  tls:
+    createCertificate: true
+    issuerName: internal-user-controller-selfsigned
+    certificateName: internal-user-controller-webhook-cert
+    secretName: internal-user-controller-webhook-cert
+    dnsNames: []
+    duration: 2160h
+    renewBefore: 360h
+    privateKeyAlgorithm: RSA
+    privateKeySize: 2048
+
+admission:
+  enabled: true
+  name: internal-user-admission
+  replicaCount: 1
+  image:
+    repository: ghcr.io/labring/sealos-internal-user-admission
+    tag: latest
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  tls:
+    createCertificate: true
+    issuerName: internal-user-admission-selfsigned
+    certificateName: internal-user-admission-cert
+    secretName: internal-user-admission-cert
+    dnsNames: []
+    duration: 2160h
+    renewBefore: 360h
+    privateKeyAlgorithm: RSA
+    privateKeySize: 2048
+
+targetBroker:
+  enabled: true
+  name: internal-credential-broker
+  clusterRoleName: internal-credential-broker-target
+  leaseRoleName: internal-credential-broker-leases
+  tokenRequestRoleName: internal-credential-broker-tokenrequest
+
+profiles:
+  - name: internal-user-base-readonly-v1
+    labels:
+      user.sealos.io/credential-profile: base-readonly.v1
+      user.sealos.io/profile-version: v1
+    rules:
+      - apiGroups: [""]
+        resources: [pods, services]
+        verbs: [get, list, watch]
+      - apiGroups: [apps]
+        resources: [deployments, replicasets]
+        verbs: [get, list, watch]
+  - name: internal-user-cluster-ops-write-v1
+    labels:
+      user.sealos.io/credential-profile: cluster-ops-write.v1
+      user.sealos.io/profile-version: v1
+    rules:
+      - apiGroups: [""]
+        resources: [pods, services]
+        verbs: [get, list, watch]
+      - apiGroups: [apps]
+        resources: [deployments, replicasets]
+        verbs: [get, list, watch]
+      - apiGroups: [""]
+        resources: [events]
+        verbs: [create, patch]
+
+networkPolicy:
+  accessSystemDefaultDeny: true

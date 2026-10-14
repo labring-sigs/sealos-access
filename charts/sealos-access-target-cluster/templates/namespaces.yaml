@@ -1,0 +1,26 @@
+{{- if and .Values.namespaces.create (or .Values.controller.enabled .Values.admission.enabled) (ne .Values.namespaces.controller .Release.Namespace) }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.controller }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+{{- end }}
+{{- if and .Values.namespaces.create (or .Values.controller.enabled .Values.targetBroker.enabled) (ne .Values.namespaces.user .Release.Namespace) }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.user }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+{{- end }}
+{{- if and .Values.namespaces.create (or .Values.targetBroker.enabled .Values.admission.enabled) (ne .Values.namespaces.broker .Release.Namespace) }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespaces.broker }}
+  labels:
+{{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
+{{- end }}

@@ -1,0 +1,133 @@
+commonLabels: {}
+
+namespaces:
+  create: true
+
+broker:
+  enabled: true
+  name: internal-credential-broker
+  namespace: access-broker-system
+  replicaCount: 2
+  image:
+    repository: ghcr.io/labring/sealos-internal-credential-broker
+    tag: latest
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  adminGroup: sealos.internal.admin
+  oidc:
+    issuer: https://replace-with-allowlisted-oidc-issuer.example
+    audience: sealos-internal-credential-broker
+    jwksURL: ""
+    caFile: ""
+    serverName: ""
+  targets: []
+  requestRateLimit: "10"
+  requestRateBurst: "20"
+  trustedProxyCIDRs: 10.0.0.0/8
+  allowedClientCIDRs: 10.0.0.0/8
+  trustedClientIPHeader: X-Trusted-Client-IP
+  projectedServiceAccountToken:
+    enabled: false
+    audience: https://kubernetes.default.svc.cluster.local
+    expirationSeconds: 600
+  tls:
+    createCertificate: true
+    issuerName: internal-credential-broker-selfsigned
+    certificateName: internal-credential-broker-tls
+    secretName: internal-credential-broker-tls
+    dnsNames: []
+    duration: 2160h
+    renewBefore: 360h
+    privateKeyAlgorithm: RSA
+    privateKeySize: 2048
+  oidcCASecretName: internal-credential-broker-oidc-ca
+  targetCredentialsSecretName: internal-credential-broker-target-credentials
+  networkPolicy:
+    enabled: true
+    gatewayNamespaceSelector:
+      kubernetes.io/metadata.name: higress-system
+    gatewayPodSelector:
+      app: higress-gateway
+      higress: higress-system-higress-gateway
+    adapterNamespaceSelector:
+      kubernetes.io/metadata.name: access-approval-system
+    adapterPodSelector:
+      app.kubernetes.io/name: internal-credential-approval-adapter
+    additionalEgress: []
+
+adapter:
+  enabled: true
+  name: internal-credential-approval-adapter
+  namespace: access-approval-system
+  replicaCount: 2
+  image:
+    repository: ghcr.io/labring/sealos-internal-user-approval-adapter
+    tag: latest
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  clusterID: replace-with-target-id
+  broker:
+    url: ""
+    serverName: ""
+    caFile: /etc/adapter/broker-ca/ca.crt
+    caSecretName: internal-credential-approval-adapter-broker-ca
+    bearerTokenSecretName: internal-credential-approval-adapter-secrets
+    bearerTokenSecretKey: broker-bearer-token
+    bearerTokenFile: /etc/adapter/broker-token/token
+  smtp:
+    host: replace-with-approved-smtp-relay.example
+    port: "587"
+    from: internal-credential-broker@example.internal
+    subject: Internal Kubernetes credential approval
+  extraEnv: []
+  extraEnvFrom: []
+  tls:
+    createCertificate: true
+    issuerName: internal-credential-approval-adapter-selfsigned
+    certificateName: internal-credential-approval-adapter-tls
+    secretName: internal-credential-approval-adapter-tls
+    dnsNames: []
+    duration: 2160h
+    renewBefore: 360h
+    privateKeyAlgorithm: RSA
+    privateKeySize: 2048
+  networkPolicy:
+    enabled: true
+    gatewayNamespaceSelector:
+      kubernetes.io/metadata.name: higress-system
+    gatewayPodSelector:
+      app: higress-gateway
+      higress: higress-system-higress-gateway
+    brokerNamespaceSelector:
+      kubernetes.io/metadata.name: access-broker-system
+    brokerPodSelector:
+      app.kubernetes.io/name: internal-credential-broker
+    additionalEgress: []

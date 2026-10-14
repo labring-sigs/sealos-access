@@ -1,0 +1,11 @@
+{{- if .Values.broker.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.broker.name }}
+  namespace: {{ .Values.broker.namespace }}
+  labels:
+{{ include "sealos-access-control-plane.labels" . | nindent 4 }}
+{{ include "sealos-access-control-plane.brokerSelectorLabels" . | nindent 4 }}
+automountServiceAccountToken: false
+{{- end }}

@@ -1,0 +1,27 @@
+# Replace every example value before enabling a production target.
+broker:
+  oidc:
+    issuer: https://login.example.internal
+  targets:
+    - id: production-a
+      apiServer: https://api.production-a.internal.example
+      clusterServer: https://api.production-a.example
+      caFile: /etc/broker/targets/production-a.ca.crt
+      credentialFile: /etc/broker/targets/production-a.token
+      kubernetesAudience: https://kubernetes.default.svc.cluster.local
+      userNamespace: access-system
+      brokerNamespace: access-broker-system
+      clusterName: production-a
+      enabled: false
+  networkPolicy:
+    additionalEgress:
+      # Add exact DNS/API/OIDC/approval destinations for the installation.
+      - to:
+          - ipBlock:
+              cidr: 192.0.2.0/24
+        ports:
+          - protocol: TCP
+            port: 443
+
+adapter:
+  clusterID: production-a
