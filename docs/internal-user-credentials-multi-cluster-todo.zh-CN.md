@@ -93,8 +93,8 @@ P1 范围决策：4.5 节按当前决定暂缓。它继续作为运维后续事�
   `kubectl create token internal-credential-broker -n access-broker-system --audience=<target-api-audience>`，
   再挂载到配置的 `credentialFile` 路径。
 - 启用目标前，使用目标 ServiceAccount 执行 `kubectl auth can-i`：只有读取
-  `internalusers.user.sealos.io`、在 `internal-credential-broker` 中读取/创建
-  `credentialleases.user.sealos.io` 和更新 `credentialleases/status`、创建
+  `internalusers.access.sealos.io`、在 `internal-credential-broker` 中读取/创建
+  `credentialleases.access.sealos.io` 和更新 `credentialleases/status`、创建
   `tokenreviews.authentication.k8s.io`、在 `access-system` 中创建
   `serviceaccounts/token` 必须返回 `yes`；读取 Secret、任意 RBAC 写操作和
   `cluster-admin` 必须返回 `no`。

@@ -40,7 +40,7 @@ func (r *CredentialLeaseWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-user-sealos-io-v1-credentiallease,mutating=true,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=credentialleases,verbs=create;update,versions=v1,name=mcredentiallease.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-access-sealos-io-v1-credentiallease,mutating=true,failurePolicy=fail,sideEffects=None,groups=access.sealos.io,resources=credentialleases,verbs=create;update,versions=v1,name=mcredentiallease.kb.io,admissionReviewVersions=v1
 
 var _ webhook.CustomDefaulter = &CredentialLeaseWebhook{}
 
@@ -55,7 +55,7 @@ func (r *CredentialLeaseWebhook) Default(_ context.Context, obj runtime.Object) 
 	return nil
 }
 
-// +kubebuilder:webhook:path=/validate-user-sealos-io-v1-credentiallease,mutating=false,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=credentialleases,verbs=create;update;delete,versions=v1,name=vcredentiallease.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-access-sealos-io-v1-credentiallease,mutating=false,failurePolicy=fail,sideEffects=None,groups=access.sealos.io,resources=credentialleases,verbs=create;update;delete,versions=v1,name=vcredentiallease.kb.io,admissionReviewVersions=v1
 
 var _ webhook.CustomValidator = &CredentialLeaseWebhook{}
 

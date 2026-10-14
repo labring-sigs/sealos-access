@@ -4,6 +4,6 @@ kind: ClusterRole
 metadata:
   name: internal-user-admission
 rules:
-- apiGroups: [user.sealos.io]
+- apiGroups: [access.sealos.io]
   resources: [internalusers]
   verbs: [get]

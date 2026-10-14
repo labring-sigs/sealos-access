@@ -164,7 +164,7 @@ InternalUser、lease 和 owner UID label。任何不匹配都 fail closed：不�
 不修改、不删除对象，保留 lease finalizer，并产生可处理的 warning。
 
 普通用户和管理员都不通过 Kubernetes API verb 操作
-`credentialleases.user.sealos.io`。部署时的外部 RBAC 策略应拒绝这些身份的
+`credentialleases.access.sealos.io`。部署时的外部 RBAC 策略应拒绝这些身份的
 get/list/watch/create/update/patch/delete。Broker 从已验证的 OIDC claims 推导
 requester，Controller 只处理 Broker 创建的状态。
 

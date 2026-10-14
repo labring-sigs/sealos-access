@@ -114,8 +114,8 @@ Deployment wiring:
   -n access-broker-system --audience=<target-api-audience>`, then mount
   it at the configured `credentialFile` path.
 - Before enabling a target, run `kubectl auth can-i` as the target ServiceAccount
-  and require `yes` only for `get internalusers.user.sealos.io`,
-  `get/create credentialleases.user.sealos.io` in
+  and require `yes` only for `get internalusers.access.sealos.io`,
+  `get/create credentialleases.access.sealos.io` in
   `internal-credential-broker`, `update credentialleases/status` there,
   `create tokenreviews.authentication.k8s.io`, and `create
   serviceaccounts/token` in `access-system`; require `no` for Secret

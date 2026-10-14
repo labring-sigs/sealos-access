@@ -16,7 +16,7 @@ metadata:
   labels:
 {{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
 rules:
-- apiGroups: [user.sealos.io]
+- apiGroups: [access.sealos.io]
   resources: [internalusers]
   verbs: [get]
 ---
@@ -43,7 +43,7 @@ metadata:
   labels:
 {{ include "sealos-access-target-cluster.labels" . | nindent 4 }}
 rules:
-- apiGroups: [user.sealos.io]
+- apiGroups: [access.sealos.io]
   resources: [credentialleases]
   verbs: [get]
 ---

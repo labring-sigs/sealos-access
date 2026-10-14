@@ -5,6 +5,6 @@ metadata:
   name: internal-user-admission
   namespace: access-broker-system
 rules:
-- apiGroups: [user.sealos.io]
+- apiGroups: [access.sealos.io]
   resources: [credentialleases]
   verbs: [get]

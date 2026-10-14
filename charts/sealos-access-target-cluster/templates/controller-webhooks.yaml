@@ -16,9 +16,9 @@ webhooks:
     service:
       name: internal-user-controller-webhook
       namespace: {{ .Values.namespaces.controller }}
-      path: /mutate-user-sealos-io-v1-internaluser
+      path: /mutate-access-sealos-io-v1-internaluser
   rules:
-  - apiGroups: [user.sealos.io]
+  - apiGroups: [access.sealos.io]
     apiVersions: [v1]
     operations: [CREATE, UPDATE]
     resources: [internalusers]
@@ -30,9 +30,9 @@ webhooks:
     service:
       name: internal-user-controller-webhook
       namespace: {{ .Values.namespaces.controller }}
-      path: /mutate-user-sealos-io-v1-credentiallease
+      path: /mutate-access-sealos-io-v1-credentiallease
   rules:
-  - apiGroups: [user.sealos.io]
+  - apiGroups: [access.sealos.io]
     apiVersions: [v1]
     operations: [CREATE, UPDATE]
     resources: [credentialleases]
@@ -54,9 +54,9 @@ webhooks:
     service:
       name: internal-user-controller-webhook
       namespace: {{ .Values.namespaces.controller }}
-      path: /validate-user-sealos-io-v1-internaluser
+      path: /validate-access-sealos-io-v1-internaluser
   rules:
-  - apiGroups: [user.sealos.io]
+  - apiGroups: [access.sealos.io]
     apiVersions: [v1]
     operations: [CREATE, UPDATE, DELETE]
     resources: [internalusers]
@@ -68,9 +68,9 @@ webhooks:
     service:
       name: internal-user-controller-webhook
       namespace: {{ .Values.namespaces.controller }}
-      path: /validate-user-sealos-io-v1-credentiallease
+      path: /validate-access-sealos-io-v1-credentiallease
   rules:
-  - apiGroups: [user.sealos.io]
+  - apiGroups: [access.sealos.io]
     apiVersions: [v1]
     operations: [CREATE, UPDATE, DELETE]
     resources: [credentialleases]
