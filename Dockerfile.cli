@@ -1,0 +1,9 @@
+FROM alpine:3.21
+RUN apk add --no-cache curl ca-certificates && \
+    adduser -D -u 65532 testuser
+COPY bin/sealos-access-amd64 /usr/local/bin/sealos-access
+RUN mkdir -p /home/testuser/.config/sealos/access && \
+    chown -R testuser:testuser /home/testuser
+USER testuser
+WORKDIR /home/testuser
+ENTRYPOINT ["/bin/sh", "-c", "echo 'CLI tools ready. Run: sealos-access --help'; tail -f /dev/null"]

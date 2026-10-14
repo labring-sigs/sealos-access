@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-approval-server
+  namespace: access-mock
+  labels:
+    app.kubernetes.io/name: mock-approval-server
+    app.kubernetes.io/part-of: internal-user-credentials
+    app.kubernetes.io/component: mock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mock-approval-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mock-approval-server
+        app.kubernetes.io/part-of: internal-user-credentials
+        app.kubernetes.io/component: mock
+    spec:
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: mock-approval-server
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mock-approval-server
+          image: mock-approval-server:latest
+          args:
+            - -listen-address
+            - :8080
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          env:
+            - name: MOCK_APPROVAL_LISTEN_ADDRESS
+              value: :8080

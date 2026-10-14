@@ -1,0 +1,22 @@
+# Copyright 2026 labring.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: internal-user-controller-selfsigned
+  namespace: access-controller-system
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-user-controller-webhook-cert
+  namespace: access-controller-system
+spec:
+  secretName: internal-user-controller-webhook-cert
+  dnsNames:
+  - internal-user-controller-webhook.access-controller-system.svc
+  - internal-user-controller-webhook.access-controller-system.svc.cluster.local
+  issuerRef:
+    name: internal-user-controller-selfsigned
+    kind: Issuer

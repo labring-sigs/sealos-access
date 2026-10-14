@@ -1,0 +1,21 @@
+# Copyright 2026 labring.
+# Replace every placeholder before applying this manifest.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: internal-credential-approval-adapter-config
+  namespace: access-approval-system
+data:
+  listen-address: :8443
+  broker-url: https://internal-credential-broker.access-broker-system.svc
+  broker-server-name: internal-credential-broker.access-broker-system.svc
+  broker-ca-file: /etc/adapter/broker-ca/ca.crt
+  # broker-client-cert-file and broker-client-key-file have been removed.
+  # The broker approve endpoint now uses OIDC Bearer token authentication.
+  # Configure BROKER_BEARER_TOKEN or BROKER_BEARER_TOKEN_FILE env vars.
+  smtp-host: replace-with-approved-smtp-relay.example
+  smtp-port: "587"
+  smtp-from: internal-credential-broker@example.internal
+  smtp-subject: Internal Kubernetes credential approval
+  adapter-tls-cert-file: /etc/adapter/tls/tls.crt
+  adapter-tls-key-file: /etc/adapter/tls/tls.key

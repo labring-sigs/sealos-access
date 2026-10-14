@@ -1,0 +1,81 @@
+# Copyright 2026 labring.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-credential-approval-adapter-default-deny
+  namespace: access-approval-system
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-credential-approval-adapter-ingress
+  namespace: access-approval-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: internal-credential-approval-adapter
+  policyTypes: [Ingress]
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: higress-system
+      podSelector:
+        matchLabels:
+          app: higress-gateway
+          higress: higress-system-higress-gateway
+    ports:
+    - protocol: TCP
+      port: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-credential-approval-adapter-egress
+  namespace: access-approval-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: internal-credential-approval-adapter
+  policyTypes: [Egress]
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Replace these documentation-only ranges with the exact external approval API and
+  # SMTP relay egress ranges used by the installation. NetworkPolicy cannot
+  # express a DNS hostname portably.
+  - to:
+    - ipBlock:
+        cidr: 203.0.113.0/24
+    ports:
+    - protocol: TCP
+      port: 443
+  - to:
+    - ipBlock:
+        cidr: 192.0.2.0/24
+    ports:
+    - protocol: TCP
+      port: 587
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: access-broker-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: internal-credential-broker
+    ports:
+    - protocol: TCP
+      port: 443

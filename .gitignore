@@ -1,0 +1,13 @@
+bin/
+testbin/
+*.test
+*.out
+
+# Temporary files
+*.swp
+*.swo
+*~
+
+# Local build and test output
+.coverprofile
+.cache/

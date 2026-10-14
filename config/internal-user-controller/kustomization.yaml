@@ -1,0 +1,21 @@
+# Copyright 2026 labring.
+resources:
+- namespace.yaml
+- user-system-namespace.yaml
+- serviceaccount.yaml
+- leader-election-role.yaml
+- leader-election-rolebinding.yaml
+- user-system-role.yaml
+- user-system-rolebinding.yaml
+- clusterrole.yaml
+- profile-clusterroles.yaml
+- clusterrolebinding.yaml
+- configmap.yaml
+- deployment.yaml
+- service.yaml
+- certificate.yaml
+- webhook.yaml
+
+commonLabels:
+  app.kubernetes.io/name: internal-user-controller
+  app.kubernetes.io/part-of: sealos

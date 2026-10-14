@@ -1,0 +1,36 @@
+# Copyright 2026 labring.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: internal-user-controller
+rules:
+- apiGroups: [user.sealos.io]
+  resources: [internalusers]
+  verbs: [get, list, watch, update, patch]
+- apiGroups: [user.sealos.io]
+  resources: [internalusers/status]
+  verbs: [get, update, patch]
+- apiGroups: [user.sealos.io]
+  resources: [internalusers/finalizers]
+  verbs: [update]
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases]
+  verbs: [get, list, watch, update, patch]
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases/status]
+  verbs: [get, update, patch]
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases/finalizers]
+  verbs: [update]
+- apiGroups: [""]
+  resources: [namespaces]
+  verbs: [get, list, watch]
+- apiGroups: [rbac.authorization.k8s.io]
+  resources: [clusterrolebindings]
+  verbs: [get, list, watch, create, update, patch, delete]
+- apiGroups: [rbac.authorization.k8s.io]
+  resources: [clusterroles]
+  verbs: [get, list, watch]
+- apiGroups: [""]
+  resources: [events]
+  verbs: [create, patch]

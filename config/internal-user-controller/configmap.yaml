@@ -1,0 +1,8 @@
+# Copyright 2026 labring.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: internal-user-controller-config
+  namespace: access-controller-system
+data:
+  oidc-issuers: https://replace-with-allowlisted-oidc-issuer.example

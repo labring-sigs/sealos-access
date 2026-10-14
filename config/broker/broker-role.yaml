@@ -1,0 +1,13 @@
+# Copyright 2026 labring.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: internal-credential-broker-leases
+  namespace: access-broker-system
+rules:
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases]
+  verbs: [get, create]
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases/status]
+  verbs: [get, update, patch]

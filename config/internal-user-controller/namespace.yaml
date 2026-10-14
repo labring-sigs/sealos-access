@@ -1,0 +1,5 @@
+# Copyright 2026 labring.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: access-controller-system

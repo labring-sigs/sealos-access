@@ -1,0 +1,13 @@
+# Copyright 2026 labring.
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-user-controller-webhook
+  namespace: access-controller-system
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: webhook-server
+  selector:
+    app.kubernetes.io/name: internal-user-controller

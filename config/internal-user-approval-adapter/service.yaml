@@ -1,0 +1,14 @@
+# Copyright 2026 labring.
+apiVersion: v1
+kind: Service
+metadata:
+  name: internal-credential-approval-adapter
+  namespace: access-approval-system
+spec:
+  type: ClusterIP
+  ports:
+  - name: https
+    port: 443
+    targetPort: https
+  selector:
+    app.kubernetes.io/name: internal-credential-approval-adapter

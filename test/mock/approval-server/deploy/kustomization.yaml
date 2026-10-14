@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: access-mock
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - service.yaml
+  - deployment.yaml
+
+images:
+  - name: mock-approval-server
+    newName: ghcr.io/labring/sealos-mock-approval-server
+    newTag: latest

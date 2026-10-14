@@ -1,0 +1,112 @@
+# Copyright 2026 labring.
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: internalusers.user.sealos.io
+spec:
+  group: user.sealos.io
+  names:
+    kind: InternalUser
+    listKind: InternalUserList
+    plural: internalusers
+    singular: internaluser
+  scope: Cluster
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    additionalPrinterColumns:
+    - name: Phase
+      type: string
+      jsonPath: .status.phase
+    - name: DerivedName
+      type: string
+      jsonPath: .status.derivedName
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            type: object
+            required:
+            - identity
+            - roleProfile
+            properties:
+              identity:
+                type: object
+                required:
+                - issuer
+                - subject
+                properties:
+                  issuer:
+                    type: string
+                  subject:
+                    type: string
+              roleProfile:
+                type: string
+                enum:
+                - base-readonly.v1
+              suspend:
+                type: boolean
+          status:
+            type: object
+            properties:
+              phase:
+                type: string
+                enum:
+                - Pending
+                - Active
+                - Suspended
+                - Failed
+              derivedName:
+                type: string
+              stableServiceAccountRef:
+                type: object
+                properties:
+                  apiVersion:
+                    type: string
+                  fieldPath:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  resourceVersion:
+                    type: string
+                  uid:
+                    type: string
+              conditions:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - status
+                  - type
+                  properties:
+                    lastTransitionTime:
+                      type: string
+                      format: date-time
+                    message:
+                      type: string
+                    observedGeneration:
+                      type: integer
+                      format: int64
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+    subresources:
+      status: {}

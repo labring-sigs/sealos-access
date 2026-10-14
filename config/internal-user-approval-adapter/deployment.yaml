@@ -1,0 +1,125 @@
+# Copyright 2026 labring.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: internal-credential-approval-adapter
+  namespace: access-approval-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: internal-credential-approval-adapter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: internal-credential-approval-adapter
+    spec:
+      serviceAccountName: internal-credential-approval-adapter
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: adapter
+        image: ghcr.io/labring/sealos-internal-user-approval-adapter:latest
+        imagePullPolicy: IfNotPresent
+        command: [/approval-adapter]
+        ports:
+        - name: https
+          containerPort: 8443
+        env:
+        - name: INTERNAL_USER_APPROVAL_ADAPTER_LISTEN_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: listen-address
+        - name: BROKER_URL
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: broker-url
+        - name: BROKER_SERVER_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: broker-server-name
+        - name: BROKER_CA_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: broker-ca-file
+        - name: SMTP_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: smtp-host
+        - name: SMTP_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: smtp-port
+        - name: SMTP_FROM
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: smtp-from
+        - name: SMTP_SUBJECT
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: smtp-subject
+        - name: SMTP_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: internal-credential-approval-adapter-secrets
+              key: smtp-username
+              optional: true
+        - name: SMTP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: internal-credential-approval-adapter-secrets
+              key: smtp-password
+              optional: true
+        - name: ADAPTER_TLS_CERT_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: adapter-tls-cert-file
+        - name: ADAPTER_TLS_KEY_FILE
+          valueFrom:
+            configMapKeyRef:
+              name: internal-credential-approval-adapter-config
+              key: adapter-tls-key-file
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /healthz
+            port: https
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /healthz
+            port: https
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        volumeMounts:
+        - name: adapter-tls
+          mountPath: /etc/adapter/tls
+          readOnly: true
+        - name: broker-ca
+          mountPath: /etc/adapter/broker-ca
+          readOnly: true
+      volumes:
+      - name: adapter-tls
+        secret:
+          secretName: internal-credential-approval-adapter-tls
+      - name: broker-ca
+        secret:
+          secretName: internal-credential-approval-adapter-broker-ca

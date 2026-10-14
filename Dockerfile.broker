@@ -1,0 +1,9 @@
+# Copyright 2026 labring.
+FROM scratch
+ARG TARGETARCH
+
+WORKDIR /
+USER 65532:65532
+
+COPY bin/broker-$TARGETARCH /broker
+ENTRYPOINT ["/broker"]

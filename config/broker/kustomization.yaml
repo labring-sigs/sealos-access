@@ -1,0 +1,20 @@
+# Copyright 2026 labring.
+resources:
+- namespace.yaml
+- user-system-namespace.yaml
+- serviceaccount.yaml
+- clusterrole.yaml
+- clusterrolebinding.yaml
+- broker-role.yaml
+- broker-rolebinding.yaml
+- user-system-role.yaml
+- user-system-rolebinding.yaml
+- configmap.yaml
+- certificate.yaml
+- deployment.yaml
+- service.yaml
+- networkpolicy.yaml
+
+commonLabels:
+  app.kubernetes.io/name: internal-credential-broker
+  app.kubernetes.io/part-of: sealos
