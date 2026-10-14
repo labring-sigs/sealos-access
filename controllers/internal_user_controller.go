@@ -59,11 +59,11 @@ type InternalUserReconciler struct {
 	BaseRoleName  string
 }
 
-// +kubebuilder:rbac:groups=user.sealos.io,resources=internalusers,verbs=get;list;watch;update;patch
-// +kubebuilder:rbac:groups=user.sealos.io,resources=internalusers/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=user.sealos.io,resources=internalusers/finalizers,verbs=update
-// +kubebuilder:rbac:groups=user.sealos.io,resources=credentialleases,verbs=get;list;watch
-// +kubebuilder:rbac:groups=user.sealos.io,resources=credentialleases/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=access.sealos.io,resources=internalusers,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=access.sealos.io,resources=internalusers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=access.sealos.io,resources=internalusers/finalizers,verbs=update
+// +kubebuilder:rbac:groups=access.sealos.io,resources=credentialleases,verbs=get;list;watch
+// +kubebuilder:rbac:groups=access.sealos.io,resources=credentialleases/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete

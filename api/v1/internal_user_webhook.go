@@ -47,7 +47,7 @@ func (r *InternalUserWebhook) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-user-sealos-io-v1-internaluser,mutating=true,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=internalusers,verbs=create;update,versions=v1,name=minternaluser.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-access-sealos-io-v1-internaluser,mutating=true,failurePolicy=fail,sideEffects=None,groups=access.sealos.io,resources=internalusers,verbs=create;update,versions=v1,name=minternaluser.kb.io,admissionReviewVersions=v1
 
 var _ webhook.CustomDefaulter = &InternalUserWebhook{}
 
@@ -62,7 +62,7 @@ func (r *InternalUserWebhook) Default(_ context.Context, obj runtime.Object) err
 	return nil
 }
 
-// +kubebuilder:webhook:path=/validate-user-sealos-io-v1-internaluser,mutating=false,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=internalusers,verbs=create;update;delete,versions=v1,name=vinternaluser.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-access-sealos-io-v1-internaluser,mutating=false,failurePolicy=fail,sideEffects=None,groups=access.sealos.io,resources=internalusers,verbs=create;update;delete,versions=v1,name=vinternaluser.kb.io,admissionReviewVersions=v1
 
 var _ webhook.CustomValidator = &InternalUserWebhook{}
 

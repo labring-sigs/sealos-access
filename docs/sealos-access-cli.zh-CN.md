@@ -159,7 +159,7 @@ Broker 从已认证的 OIDC identity 推导 requester 和 target，并将 profil
 
 - CLI 所在主机可以访问 Kubernetes API Server；
 - 使用的 kubeconfig 认证管理员身份，并且只授予创建
-  `internalusers.user.sealos.io` 所需的窄权限；
+  `internalusers.access.sealos.io` 所需的窄权限；
 - 已安装 `InternalUser` CRD 及校验 webhook，webhook 配置了服务端维护的 HTTPS OIDC issuer 白名单；
 - issuer 和 subject 必须对应真实内部人员。subject 是不透明、不可变的 OIDC subject，不能由调用方
   用显示名或邮箱代替；
@@ -168,7 +168,7 @@ Broker 从已认证的 OIDC identity 推导 requester 和 target，并将 profil
 
 kubeconfig 本身是管理员凭据，必须按照集群管理员凭据策略保护。CLI 不会提升自己的 Kubernetes
 权限。管理员身份不应仅因为使用这些命令就获得 Secret 读取、任意 RBAC 写入、TokenRequest 或
-`credentialleases.user.sealos.io` 修改权限。
+`credentialleases.access.sealos.io` 修改权限。
 
 ### 管理员配置
 

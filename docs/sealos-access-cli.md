@@ -184,7 +184,7 @@ adapter; it does not write `CredentialLease` directly.
 
 - The CLI host can reach the Kubernetes API server.
 - The selected kubeconfig authenticates an administrator with the narrowly
-  scoped permission to create `internalusers.user.sealos.io`.
+  scoped permission to create `internalusers.access.sealos.io`.
 - The `InternalUser` CRD and validating webhook are installed. The webhook has
   a server-configured allowlist of HTTPS OIDC issuers.
 - The issuer and subject identify one real internal person. The subject is an
@@ -198,7 +198,7 @@ The administrator kubeconfig must be protected according to the cluster's
 administrator credential policy. The CLI does not elevate its own Kubernetes
 permissions. The administrator identity should not receive Secret reads,
 arbitrary RBAC writes, TokenRequest access, or
-`credentialleases.user.sealos.io` mutation access merely to use these commands.
+`credentialleases.access.sealos.io` mutation access merely to use these commands.
 
 ### Administrator configuration
 

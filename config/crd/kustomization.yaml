@@ -1,4 +1,4 @@
 # Copyright 2026 labring.
 resources:
-- bases/user.sealos.io_internalusers.yaml
-- bases/user.sealos.io_credentialleases.yaml
+- bases/access.sealos.io_internalusers.yaml
+- bases/access.sealos.io_credentialleases.yaml

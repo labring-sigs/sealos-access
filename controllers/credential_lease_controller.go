@@ -69,10 +69,10 @@ type CredentialLeaseReconciler struct {
 	Now              func() time.Time
 }
 
-// +kubebuilder:rbac:groups=user.sealos.io,resources=credentialleases,verbs=get;list;watch;update;patch
-// +kubebuilder:rbac:groups=user.sealos.io,resources=credentialleases/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=user.sealos.io,resources=credentialleases/finalizers,verbs=update
-// +kubebuilder:rbac:groups=user.sealos.io,resources=internalusers,verbs=get
+// +kubebuilder:rbac:groups=access.sealos.io,resources=credentialleases,verbs=get;list;watch;update;patch
+// +kubebuilder:rbac:groups=access.sealos.io,resources=credentialleases/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=access.sealos.io,resources=credentialleases/finalizers,verbs=update
+// +kubebuilder:rbac:groups=access.sealos.io,resources=internalusers,verbs=get
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete

@@ -4,7 +4,7 @@ kind: ClusterRole
 metadata:
   name: internal-credential-broker
 rules:
-- apiGroups: [user.sealos.io]
+- apiGroups: [access.sealos.io]
   resources: [internalusers]
   verbs: [get]
 - apiGroups: [authentication.k8s.io]

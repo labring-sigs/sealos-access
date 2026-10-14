@@ -298,11 +298,11 @@ token。
 ```sh
 SUBJECT='system:serviceaccount:access-broker-system:internal-credential-broker'
 
-kubectl auth can-i get internalusers.user.sealos.io --as "$SUBJECT"
+kubectl auth can-i get internalusers.access.sealos.io --as "$SUBJECT"
 kubectl auth can-i create tokenreviews.authentication.k8s.io --as "$SUBJECT"
-kubectl auth can-i get credentialleases.user.sealos.io \
+kubectl auth can-i get credentialleases.access.sealos.io \
   -n access-broker-system --as "$SUBJECT"
-kubectl auth can-i create credentialleases.user.sealos.io \
+kubectl auth can-i create credentialleases.access.sealos.io \
   -n access-broker-system --as "$SUBJECT"
 kubectl auth can-i create serviceaccounts/token \
   -n access-system --as "$SUBJECT"

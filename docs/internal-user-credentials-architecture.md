@@ -180,7 +180,7 @@ not adopted or removed, the lease finalizer remains, and an actionable warning
 is emitted.
 
 Ordinary users and administrators do not use Kubernetes API verbs on
-`credentialleases.user.sealos.io`. The required external RBAC policy denies
+`credentialleases.access.sealos.io`. The required external RBAC policy denies
 get/list/watch/create/update/patch/delete for those identities. The Broker
 derives the requester from the verified OIDC claims, and the Controller sees
 only Broker-created state.
