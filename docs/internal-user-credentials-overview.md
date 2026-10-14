@@ -1,19 +1,17 @@
 # Internal User Credentials Overview
 
 This is the short introduction to the InternalUser credential system. Read it
-before the detailed architecture or design documents. It explains the main
+before the detailed architecture and operational guides. It explains the main
 components and user journeys without describing every Kubernetes permission or
 failure case.
 
 Detailed documents:
 
 - [Implementation architecture](internal-user-credentials-architecture.md)
-- [Design decisions](internal-user-credentials-design.md)
-- [User CLI guide](internal-user-credentials-cli.md)
-- [Administrator CLI guide](internal-user-admin-cli.md)
+- [Sealos Access CLI guide](sealos-access-cli.md)
 - [Approval adapter guide](internal-user-approval-adapter.md)
 - [Broker configuration guide](internal-user-credentials-broker-config.md)
-- [Mock E2E test process](internal-user-credentials-mock-e2e.md)
+- [E2E test TODO](internal-user-credentials-e2e-todo.md)
 - [Multi-cluster Broker TODO](internal-user-credentials-multi-cluster-todo.md)
 
 The Chinese introduction is
@@ -228,7 +226,6 @@ tracked in the [E2E test TODO](internal-user-credentials-e2e-todo.md).
 
 Start with the [implementation architecture](internal-user-credentials-architecture.md)
 for the complete component, API, RBAC, network, and recovery design. Use the
-[CLI guide](internal-user-credentials-cli.md) for user commands, the
-[administrator guide](internal-user-admin-cli.md) for identity administration,
+[Sealos Access CLI guide](sealos-access-cli.md) for user and administrator commands,
 and the [approval adapter guide](internal-user-approval-adapter.md) for the external approval system
 and notification deployment.

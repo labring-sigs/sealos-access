@@ -1,19 +1,14 @@
 # Internal User Credentials Architecture
 
-Status: implementation architecture for the InternalUser credential system.
-This document describes the code and deployment shape in this repository. It
-is the architectural companion to
-[`internal-user-credentials-design.md`](internal-user-credentials-design.md),
-not a production approval. The acceptance matrix and execution status are
-recorded in
-[`internal-user-credentials-acceptance.md`](internal-user-credentials-acceptance.md),
-and [`internal-user-credentials-acceptance-status.md`](internal-user-credentials-acceptance-status.md).
+Status: current implementation architecture for the InternalUser credential
+system. This document describes the code and deployment shape in this
+repository. Historical design decisions have been folded into this document;
+it is not a production approval. Open validation work is tracked in the
+[E2E test TODO](internal-user-credentials-e2e-todo.md) and the
+[multi-cluster Broker TODO](internal-user-credentials-multi-cluster-todo.md).
 
 The Chinese companion is
 [`internal-user-credentials-architecture.zh-CN.md`](internal-user-credentials-architecture.zh-CN.md).
-
-The plan for merging the person-facing and administrator command surfaces is
-[`sealos-access-cli-merge-plan.md`](sealos-access-cli-merge-plan.md).
 
 ## 1. Purpose and boundaries
 
@@ -741,8 +736,5 @@ The main implementation locations are:
 - component deployment packages: `./config/`.
 
 Operational command examples and configuration-file contracts are documented
-in [`internal-user-credentials-cli.md`](internal-user-credentials-cli.md),
-[`internal-user-admin-cli.md`](internal-user-admin-cli.md), and
+in [`sealos-access-cli.md`](sealos-access-cli.md) and
 [`internal-user-approval-adapter.md`](internal-user-approval-adapter.md).
-The command merge and security acceptance criteria are documented in
-[`sealos-access-cli-merge-plan.md`](sealos-access-cli-merge-plan.md).

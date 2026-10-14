@@ -260,6 +260,38 @@ ingress gateway, Broker egress to the adapter namespace, external approval
 API egress, and the approved SMTP relay. Replace the documentation-only
 public CIDRs in the template before deployment.
 
+## Acceptance coverage
+
+The reusable `Pipeline`, `MockSource`, and protected `NotificationSink` are
+covered by unit tests and an in-process reference-redeem acceptance test.
+`TestElevatedRedeemPreOIDC` in
+`internal/access/usercmd/elevated_redeem_acceptance_test.go` verifies that:
+
+- an approved mock record is fetched, validated, and submitted to the Broker;
+- the returned reference is delivered through the protected notification sink;
+- elevated redemption writes a mode `0600` kubeconfig;
+- the notification and Broker request contain no token or kubeconfig data; and
+- the Broker performs exactly one TokenRequest.
+
+Run the focused acceptance test with:
+
+```sh
+go test -tags acceptance ./internal/access/usercmd -run '^TestElevatedRedeemPreOIDC$' -count=1 -v
+```
+
+The protected acceptance sink is compiled only with the `acceptance` build
+tag and is not part of production binaries. Run the complete in-process
+acceptance suite with:
+
+```sh
+go test -tags acceptance ./internal/access/usercmd ./pkg/approvaladapter/acceptance -count=1 -v
+```
+
+This test is process-local and does not replace the cluster-based mock E2E
+runbook. The adapter remains an integration skeleton until a concrete
+`ApprovalSource` and event listener for the external approval system are wired
+into `cmd/internal-user-approval-adapter/main.go`.
+
 ## Failure behavior summary
 
 | Failure | Consequence |

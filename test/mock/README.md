@@ -4,9 +4,10 @@ This directory contains deployable mock/simulation components that replace
 external dependencies for end-to-end testing of the internal user credentials
 system on Kubernetes.
 
-For the complete local and cluster test runbook, including the required OIDC
-TLS configuration and current adapter limitations, see
-[Internal User Credentials Mock E2E Test Process](../../docs/internal-user-credentials-mock-e2e.md).
+For test scope and outstanding acceptance work, see the
+[E2E test TODO](../../docs/internal-user-credentials-e2e-todo.md). The manifests,
+component READMEs, and package-level tests in this directory are the source of
+truth for the mock services.
 
 ## Components
 

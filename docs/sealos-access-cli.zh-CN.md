@@ -5,8 +5,23 @@
 
 该 CLI 不选择 target identity 或 RBAC profile。高权限流程由外部审批系统发起，并通过受保护
 渠道把一次性 reference 发送给用户，CLI 只负责兑换临时高权限凭证。`InternalUser` 生命周期仍由
-管理员流程维护。创建身份的管理员命名空间见
-[`internal-user-admin-cli.zh-CN.md`](internal-user-admin-cli.zh-CN.md)。
+管理员流程维护，具体见下方“管理员命令”章节。
+
+## 命令面
+
+`sealos-access` 是唯一支持的 CLI 入口：
+
+| 命令 | 角色 | 配置与授权 |
+| --- | --- | --- |
+| `login` | 获取 base 凭证 | `user.yaml`；用户 OIDC 登录和 Broker 授权 |
+| `elevated redeem` | 兑换已批准的高权限凭证 | `user.yaml`；用户 OIDC 登录和一次性 reference |
+| `admin create` | 创建或协调 `InternalUser` | `admin.yaml`；管理员 kubeconfig 和 Kubernetes RBAC |
+| `admin approve` | 提交已经批准的高权限记录 | `admin.yaml`；携带配置的管理员 group 的用户 OIDC 登录 |
+
+CLI 会先根据命令路由，再加载配置。用户命令不会读取 `admin.yaml`，管理员命令也不会
+回退读取 `user.yaml`。调用方不能选择任意 target URL、audience、profile、namespace、
+凭据或 RBAC 规则；这些决策仍由服务端控制。身份生命周期和管理员专属参数见下方
+“管理员命令”章节。
 
 ## 使用前提
 
@@ -134,6 +149,146 @@ Broker 从已认证的 OIDC identity 推导 requester 和 target，并将 profil
 非敏感元数据。如果 reference 丢失，应重新发起外部审批，不要从日志或 Kubernetes 中恢复它。
 
 审批 reference 不是认证因子，不能替代 OIDC 登录。不要把它分享给他人或写入公开工单和日志。
+
+## 管理员命令
+
+受控的 `sealos-access admin` 命名空间用于创建 `InternalUser` 资源和提交已经批准的高权限记录。
+`approve` 是外部审批适配器不可用时的手动或破窗等价能力，不直接写入 `CredentialLease`。
+
+### 授权和前提
+
+- CLI 所在主机可以访问 Kubernetes API Server；
+- 使用的 kubeconfig 认证管理员身份，并且只授予创建
+  `internalusers.user.sealos.io` 所需的窄权限；
+- 已安装 `InternalUser` CRD 及校验 webhook，webhook 配置了服务端维护的 HTTPS OIDC issuer 白名单；
+- issuer 和 subject 必须对应真实内部人员。subject 是不透明、不可变的 OIDC subject，不能由调用方
+  用显示名或邮箱代替；
+- 执行 `approve` 时，操作员必须持有独立审批记录、public OIDC client，并使用携带 Broker 精确
+  配置管理员 group 的 OIDC 身份。
+
+kubeconfig 本身是管理员凭据，必须按照集群管理员凭据策略保护。CLI 不会提升自己的 Kubernetes
+权限。管理员身份不应仅因为使用这些命令就获得 Secret 读取、任意 RBAC 写入、TokenRequest 或
+`credentialleases.user.sealos.io` 修改权限。
+
+### 管理员配置
+
+管理员命令使用独立的非敏感配置文件。可以显式指定 `--config ./admin.yaml`；未指定时，如果
+以下文件存在，CLI 会自动使用：
+
+```text
+${XDG_CONFIG_HOME}/sealos/access/admin.yaml
+```
+
+在未设置 `XDG_CONFIG_HOME` 的 Linux 上，通常是 `~/.config/sealos/access/admin.yaml`。
+
+`admin create` 示例：
+
+```yaml
+kubeconfig: /secure/path/admin.kubeconfig
+issuer: https://login.example.internal
+subject: oidc-subject-1
+```
+
+`admin approve` 示例：
+
+```yaml
+issuer: https://login.example.internal
+subject: oidc-subject-1
+broker-url: https://internal-credential-broker.example.internal
+cluster-id: public-cluster-a
+broker-ca-file: ./pki/broker-ca.pem
+broker-server-name: internal-credential-broker.example.internal
+oidc-issuer: https://login.example.internal
+oidc-ca-file: ./pki/oidc-ca.pem
+client-id: internal-admin
+approval-id: approval-instance-123
+approval-reason: incident remediation
+requested-ttl-seconds: 1800
+```
+
+命令行参数会覆盖文件中的值。配置文件必须只包含一个 YAML 文档，未知字段会被拒绝；路径按
+CLI 当前工作目录解析。不能把 kubeconfig 内容、客户端证书、私钥、bearer token、外部审批凭据
+或 Secret 数据放入文件。CLI 不会创建或修改该文件。
+
+### 创建 `InternalUser`
+
+使用当前 client-go 加载规则中的管理员 kubeconfig：
+
+```sh
+./bin/sealos-access-amd64 admin create \
+  --issuer https://login.example.internal \
+  --subject oidc-subject-1
+```
+
+如果管理员 context 不是当前 context，增加 `--kubeconfig /secure/path/admin.kubeconfig`。
+
+CLI 会先校验身份格式，然后创建一个 cluster-scoped `InternalUser`，固定使用
+`base-readonly.v1`。资源名为 `iu-` 加上 `sha256(issuer + NUL + subject)` 的前 24 位十六进制字符。
+服务端 webhook 仍然是 issuer 白名单、身份不可变、固定 profile 和派生名称的最终校验边界。
+
+创建成功时 CLI 只输出派生资源名称和 profile，不输出或落盘 Secret、token、kubeconfig 或
+`CredentialLease`。Controller 在 reconcile 后创建稳定 ServiceAccount 和基础 binding；用户变为
+Active 后，`sealos-access login` 才能申请凭证。
+
+### 提交已批准的高权限记录
+
+当外部审批适配器不可用时，只有在已有独立审批记录的情况下，才使用 `admin approve` 作为手动或
+破窗入口：
+
+```sh
+./bin/sealos-access-amd64 admin approve \
+  --issuer https://login.example.internal \
+  --subject oidc-subject-1 \
+  --broker-url https://internal-credential-broker.example.internal \
+  --cluster-id public-cluster-a \
+  --broker-ca-file ./pki/broker-ca.pem \
+  --oidc-issuer https://login.example.internal \
+  --oidc-ca-file ./pki/oidc-ca.pem \
+  --client-id internal-admin \
+  --approval-id approval-instance-123 \
+  --approval-reason "incident remediation" \
+  --requested-ttl-seconds 1800
+```
+
+命令会重新执行 OIDC Authorization Code + PKCE 登录。Broker 校验 OIDC token 和精确的管理员 group，
+再校验 Active `InternalUser`、高权限 profile 和 TTL，然后持久化 `AwaitingRedemption` lease 并返回
+reference。它不会创建临时 ServiceAccount、Secret、binding 或 kubeconfig。重复相同 `approval-id`
+是幂等的，修改 target、TTL 或 reason 会被拒绝。
+
+### 管理员参数
+
+| 参数 | 是否必需 | 说明 |
+| --- | --- | --- |
+| `--config` | 否 | YAML 配置文件；未指定时使用存在的标准管理员配置路径。 |
+| `--kubeconfig` | 否 | 管理员 kubeconfig 路径；为空时使用 client-go 标准加载规则。 |
+| `--issuer` | create/approve | HTTPS OIDC issuer，且必须在服务端白名单中。 |
+| `--subject` | create/approve | 不透明、不可变的 OIDC subject；首尾空白会被拒绝。 |
+| `--broker-url` | approve | HTTPS Broker URL。 |
+| `--cluster-id` | 是* | 服务端 allowlist 中的目标集群 ID，也可以来自 `admin.yaml`。 |
+| `--broker-ca-file` | approve | Broker TLS 校验 CA 文件。 |
+| `--broker-server-name` | 否 | Broker TLS server name。 |
+| `--oidc-issuer` | approve | 用于管理员认证的 HTTPS OIDC issuer。 |
+| `--oidc-ca-file` | 否 | OIDC TLS 校验 CA 文件。 |
+| `--client-id` | approve | Public OIDC client ID。 |
+| `--approval-id` | approve | 外部审批实例不可变 ID。 |
+| `--approval-reason` | approve | 人工可读的审批原因。 |
+| `--requested-ttl-seconds` | approve | 高权限 TTL，限制为 600-3600 秒。 |
+| `--no-browser` | 否 | 打印 OIDC 授权 URL，而不是自动打开浏览器。 |
+
+CLI 特意没有 `--name`、`--role-profile`、RBAC、Secret、token 或 `CredentialLease` 参数。
+名称和 profile 都是平台维护的值。
+
+### 管理员失败处理
+
+- HTTP 或格式错误的 issuer 会在本地被拒绝；
+- 空 subject、首尾带空白的 subject 或过长 subject 会在本地被拒绝；
+- 不在服务端白名单中的 issuer 会被 webhook 拒绝；
+- 相同 issuer/subject 再次创建时会得到相同名称并返回已存在错误，不会创建第二个身份；
+- Kubernetes 授权、连接、CRD 或 webhook 错误会直接返回，但不会泄露 credential 数据。
+
+不要把管理员 kubeconfig、客户端私钥或返回的 reference 放入工单、shell history 或源码仓库。
+没有独立审批记录时不要使用 `approve`。用户通过用户命令兑换 reference；管理员命令不会签发或
+兑换 Kubernetes kubeconfig。
 
 ## TLS 参数
 

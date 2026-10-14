@@ -7,8 +7,26 @@ The CLI never selects a target identity or RBAC profile. For elevated access,
 the external approval workflow sends the user a one-time reference, and the CLI
 redeems that reference for a temporary elevated credential. `InternalUser`
 lifecycle changes remain an administrator workflow.
-The controlled administrator namespace for creating identities is documented in
-[`internal-user-admin-cli.md`](internal-user-admin-cli.md).
+The controlled administrator namespace for creating identities and submitting
+approved records is documented in the Administrator commands section below.
+
+## Command surface
+
+The `sealos-access` binary is the single supported CLI entry point:
+
+| Command | Role | Configuration and authorization |
+| --- | --- | --- |
+| `login` | Obtain a base credential | `user.yaml`; user OIDC login and Broker authorization |
+| `elevated redeem` | Redeem an approved elevated credential | `user.yaml`; user OIDC login and one-time reference |
+| `admin create` | Create or reconcile an `InternalUser` | `admin.yaml`; administrator kubeconfig and Kubernetes RBAC |
+| `admin approve` | Submit an already-approved elevated record | `admin.yaml`; user OIDC login with the configured administrator group |
+
+Command routing happens before configuration loading. User commands never read
+`admin.yaml`, and administrator commands never fall back to `user.yaml`. The
+CLI does not allow callers to choose arbitrary target URLs, audiences,
+profiles, namespaces, credentials, or RBAC rules; those decisions remain
+server-side. See the Administrator commands section below for the identity
+lifecycle and administrator-specific flags.
 
 ## Prerequisites
 
@@ -154,6 +172,168 @@ trying to recover it from logs or Kubernetes.
 
 An approval reference is not an authentication factor. Do not share it as a
 substitute for OIDC login, and do not put it in public tickets or logs.
+
+## Administrator commands
+
+The controlled `sealos-access admin` namespace creates `InternalUser`
+resources and submits already-approved elevated records. The `approve`
+operation is the manual or break-glass equivalent of the external approval
+adapter; it does not write `CredentialLease` directly.
+
+### Authorization and prerequisites
+
+- The CLI host can reach the Kubernetes API server.
+- The selected kubeconfig authenticates an administrator with the narrowly
+  scoped permission to create `internalusers.user.sealos.io`.
+- The `InternalUser` CRD and validating webhook are installed. The webhook has
+  a server-configured allowlist of HTTPS OIDC issuers.
+- The issuer and subject identify one real internal person. The subject is an
+  opaque, immutable OIDC subject, not a display name or email chosen by the
+  caller.
+- For `approve`, the operator has an independently approved record, a public
+  OIDC client, and an OIDC identity carrying the Broker's exact administrator
+  group.
+
+The administrator kubeconfig must be protected according to the cluster's
+administrator credential policy. The CLI does not elevate its own Kubernetes
+permissions. The administrator identity should not receive Secret reads,
+arbitrary RBAC writes, TokenRequest access, or
+`credentialleases.user.sealos.io` mutation access merely to use these commands.
+
+### Administrator configuration
+
+The administrator commands use a separate non-secret configuration file. Pass
+it explicitly with `--config ./admin.yaml`, or let the CLI use this file when
+it exists:
+
+```text
+${XDG_CONFIG_HOME}/sealos/access/admin.yaml
+```
+
+On Linux without `XDG_CONFIG_HOME`, this is normally
+`~/.config/sealos/access/admin.yaml`.
+
+Example for `admin create`:
+
+```yaml
+kubeconfig: /secure/path/admin.kubeconfig
+issuer: https://login.example.internal
+subject: oidc-subject-1
+```
+
+Example for `admin approve`:
+
+```yaml
+issuer: https://login.example.internal
+subject: oidc-subject-1
+broker-url: https://internal-credential-broker.example.internal
+cluster-id: public-cluster-a
+broker-ca-file: ./pki/broker-ca.pem
+broker-server-name: internal-credential-broker.example.internal
+oidc-issuer: https://login.example.internal
+oidc-ca-file: ./pki/oidc-ca.pem
+client-id: internal-admin
+approval-id: approval-instance-123
+approval-reason: incident remediation
+requested-ttl-seconds: 1800
+```
+
+Command-line flags override file values. The file must contain one YAML
+document and unknown fields are rejected. Paths are resolved relative to the
+CLI's current working directory. Never put kubeconfig contents, client
+certificates, private keys, bearer tokens, external approval credentials, or
+Secret data in this file. The CLI does not create or modify it.
+
+### Create an `InternalUser`
+
+Use an administrator kubeconfig through the current client-go loading rules:
+
+```sh
+./bin/sealos-access-amd64 admin create \
+  --issuer https://login.example.internal \
+  --subject oidc-subject-1
+```
+
+Use `--kubeconfig /secure/path/admin.kubeconfig` when the administrator
+context is not the current context.
+
+The CLI validates the local identity shape, then creates one cluster-scoped
+`InternalUser` with `base-readonly.v1`. Its name is `iu-` followed by the first
+24 hexadecimal characters of `sha256(issuer + NUL + subject)`. The server-side
+webhook remains authoritative for issuer allowlisting, identity immutability,
+the fixed profile, and the derived name.
+
+A successful command prints only the derived resource name and profile. It
+never prints or persists a Secret, token, kubeconfig, or `CredentialLease`.
+The Controller creates the stable ServiceAccount and base binding after
+reconciliation; `sealos-access login` can request credentials only after the
+user becomes active.
+
+### Submit an approved elevated record
+
+Use `admin approve` only for an independently approved manual or break-glass
+record when the external approval adapter is unavailable:
+
+```sh
+./bin/sealos-access-amd64 admin approve \
+  --issuer https://login.example.internal \
+  --subject oidc-subject-1 \
+  --broker-url https://internal-credential-broker.example.internal \
+  --cluster-id public-cluster-a \
+  --broker-ca-file ./pki/broker-ca.pem \
+  --oidc-issuer https://login.example.internal \
+  --oidc-ca-file ./pki/oidc-ca.pem \
+  --client-id internal-admin \
+  --approval-id approval-instance-123 \
+  --approval-reason "incident remediation" \
+  --requested-ttl-seconds 1800
+```
+
+The command performs a fresh OIDC Authorization Code + PKCE login. The Broker
+validates the OIDC token and exact administrator group, then validates the
+active `InternalUser`, elevated profile, and TTL before persisting an
+`AwaitingRedemption` lease and returning a reference. It does not create a
+temporary ServiceAccount, Secret, binding, or kubeconfig. Repeating the same
+`approval-id` is idempotent; changing its target, TTL, or reason is rejected.
+
+### Administrator flags
+
+| Flag | Required | Description |
+| --- | --- | --- |
+| `--config` | No | YAML config file; otherwise the standard admin config path is used when present. |
+| `--kubeconfig` | No | Administrator kubeconfig path. Empty uses standard client-go loading rules. |
+| `--issuer` | Create/approve | HTTPS OIDC issuer; it must be in the server-side allowlist. |
+| `--subject` | Create/approve | Opaque immutable OIDC subject; surrounding whitespace is rejected. |
+| `--broker-url` | Approve | HTTPS Broker URL. |
+| `--cluster-id` | Yes* | Server-allowlisted target cluster ID; it may come from `admin.yaml`. |
+| `--broker-ca-file` | Approve | CA file for Broker TLS verification. |
+| `--broker-server-name` | No | Broker TLS server name. |
+| `--oidc-issuer` | Approve | HTTPS OIDC issuer used for administrator authentication. |
+| `--oidc-ca-file` | No | CA file for OIDC TLS verification. |
+| `--client-id` | Approve | Public OIDC client ID. |
+| `--approval-id` | Approve | Immutable external approval instance ID. |
+| `--approval-reason` | Approve | Human-readable approval reason. |
+| `--requested-ttl-seconds` | Approve | Elevated TTL, limited to 600-3600 seconds. |
+| `--no-browser` | No | Print the OIDC authorization URL instead of opening a browser. |
+
+There are intentionally no `--name`, `--role-profile`, RBAC, Secret, token,
+or `CredentialLease` flags. Names and profiles are platform-owned values.
+
+### Administrator failure handling
+
+- An HTTP or malformed issuer is rejected locally.
+- An empty, surrounding-whitespace, or overlong subject is rejected locally.
+- An issuer outside the server allowlist is rejected by the webhook.
+- Recreating the same issuer/subject resolves to the same name and returns an
+  already-exists error; it does not create a second identity.
+- Kubernetes authorization, connectivity, CRD, and webhook errors are returned
+  without exposing credential data.
+
+Do not put the administrator kubeconfig, client key, or returned reference in
+tickets, shell history, or source control. Do not use `approve` without an
+independently recorded approval. Users redeem references through the user
+commands; administrator commands do not issue or redeem a Kubernetes
+kubeconfig.
 
 ## TLS Options
 

@@ -277,8 +277,9 @@ the exact configured administrator group:
 4. Keep approval records non-secret: the adapter submits an approval ID,
    target identity, TTL, and reason; the Broker returns the one-time reference.
 
-Until the adapter exists, use the `sealos-access admin approve` path from the
-mock e2e runbook (sections 6.4 and 9.3).
+Until the adapter exists, use the `sealos-access admin approve` path. See the
+[Sealos Access CLI](sealos-access-cli.md) guide for command and authorization
+details.
 
 ## 7. Work required
 
@@ -324,16 +325,15 @@ mock e2e runbook (sections 6.4 and 9.3).
 ## 10. Rollback
 
 Restore the Broker ConfigMap, Deployment, and NetworkPolicy snapshots, remove
-temporary CA ConfigMaps/Secrets, and restart the Broker. The mock e2e runbook
-(section 10) contains a working restore sequence, including the caveat that
-`kubectl apply` does not remove fields added by strategic patches.
+temporary CA ConfigMaps/Secrets, and restart the Broker. Verify the restored
+objects and the Broker health before resuming traffic. Note that `kubectl apply`
+does not remove fields added by strategic patches, so inspect the live objects
+after rollback.
 
 ## 11. Related documents
 
 - [Internal user credentials overview](internal-user-credentials-overview.md)
 - [Architecture](internal-user-credentials-architecture.md)
-- [Mock e2e runbook](internal-user-credentials-mock-e2e.md)
+- [E2E test TODO](internal-user-credentials-e2e-todo.md)
 - [Approval adapter](internal-user-approval-adapter.md)
-- [Pluggable adapter](internal-user-credentials-pluggable-adapter.md)
-- [Administrator CLI](internal-user-admin-cli.md)
-- [User CLI](internal-user-credentials-cli.md)
+- [Sealos Access CLI](sealos-access-cli.md)

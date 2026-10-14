@@ -228,6 +228,35 @@ CA、服务端精确配置管理员 group 的 OIDC bearer token。还要求配�
 NetworkPolicy 只允许配置的 ingress gateway 回调入站、适配器到 Broker 的访问、外部审批
 API 和批准的 SMTP relay 出站。部署前必须替换模板中的文档占位公网 CIDR。
 
+## 验收覆盖
+
+可复用的 `Pipeline`、`MockSource` 和受保护的 `NotificationSink` 由单元测试和进程内
+reference 兑换验收测试覆盖。`internal/access/usercmd/elevated_redeem_acceptance_test.go`
+中的 `TestElevatedRedeemPreOIDC` 验证：
+
+- mock 审批记录能够被读取、校验并提交给 Broker；
+- Broker 返回的 reference 只能通过受保护的通知 sink 交付；
+- 高权限兑换会写入权限为 `0600` 的 kubeconfig；
+- 通知和 Broker 请求中不包含 token 或 kubeconfig；
+- Broker 恰好执行一次 TokenRequest。
+
+运行专项验收测试：
+
+```sh
+go test -tags acceptance ./internal/access/usercmd -run '^TestElevatedRedeemPreOIDC$' -count=1 -v
+```
+
+受保护的 acceptance sink 只在 `acceptance` build tag 下编译，不会进入生产二进制。
+运行完整的进程内 acceptance suite：
+
+```sh
+go test -tags acceptance ./internal/access/usercmd ./pkg/approvaladapter/acceptance -count=1 -v
+```
+
+该测试在单进程内运行，不能替代基于集群的 mock E2E runbook。适配器在将具体的
+`ApprovalSource` 和外部事件监听器接入 `cmd/internal-user-approval-adapter/main.go`
+之前，仍然是集成骨架。
+
 ## 故障行为汇总
 
 | 故障场景 | 后果 |

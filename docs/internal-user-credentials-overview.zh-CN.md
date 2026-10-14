@@ -1,18 +1,16 @@
 # Internal User 凭据系统概览
 
 这是一份面向第一次阅读 InternalUser 凭据系统人员的简版介绍。建议先阅读
-本文，再阅读完整架构文档或设计文档。本文只解释主要组件和用户流程，不展开
+本文，再阅读完整架构和运维文档。本文只解释主要组件和用户流程，不展开
 每一项 Kubernetes 权限和故障场景。
 
 详细文档：
 
 - [完整实现架构](internal-user-credentials-architecture.zh-CN.md)
-- [设计决策](internal-user-credentials-design.zh-CN.md)
-- [用户 CLI 说明](internal-user-credentials-cli.zh-CN.md)
-- [管理员 CLI 说明](internal-user-admin-cli.zh-CN.md)
+- [Sealos Access CLI 说明](sealos-access-cli.zh-CN.md)
 - [审批适配器说明](internal-user-approval-adapter.zh-CN.md)
 - [Broker 配置说明](internal-user-credentials-broker-config.zh-CN.md)
-- [Mock 端到端测试流程](internal-user-credentials-mock-e2e.zh-CN.md)
+- [E2E 测试 TODO](internal-user-credentials-e2e-todo.zh-CN.md)
 - [多集群 Broker 改造 TODO](internal-user-credentials-multi-cluster-todo.zh-CN.md)
 
 英文版概览见
@@ -205,6 +203,6 @@ reference 不是 OIDC 登录的替代品。它只对 lease 中记录的目标身
 ## 下一步阅读
 
 阅读[完整实现架构](internal-user-credentials-architecture.zh-CN.md)了解组件、
-API、RBAC、网络和恢复设计。用户命令查看[用户 CLI 说明](internal-user-credentials-cli.zh-CN.md)，
-身份管理查看[管理员 CLI 说明](internal-user-admin-cli.zh-CN.md)，审批和通知部署查看
+API、RBAC、网络和恢复设计。用户和管理员命令查看[Sealos Access CLI 说明](sealos-access-cli.zh-CN.md)，
+审批和通知部署查看
 [审批适配器说明](internal-user-approval-adapter.zh-CN.md)。

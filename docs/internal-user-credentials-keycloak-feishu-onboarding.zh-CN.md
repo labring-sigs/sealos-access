@@ -257,8 +257,8 @@ Keycloak 只负责认证，不做审批。elevated 流程仍需要审批源携�
 4. 审批记录不含敏感信息：只提交 approval ID、目标身份、TTL 和 reason；
    Broker 返回一次性 reference。
 
-adapter 实现前，先按 mock e2e runbook 第 6.4 / 9.3 节的
-`sealos-access admin approve` 路径做 acceptance。
+adapter 实现前，使用 `sealos-access admin approve` 路径做 acceptance。命令和授权
+细节见[Sealos Access CLI](sealos-access-cli.zh-CN.md)说明。
 
 ## 7. 需要完成的工作
 
@@ -304,15 +304,14 @@ adapter 实现前，先按 mock e2e runbook 第 6.4 / 9.3 节的
 ## 10. 回滚
 
 恢复 Broker 的 ConfigMap、Deployment、NetworkPolicy 备份，删除临时 CA
-ConfigMap/Secret，并重启 Broker。mock e2e runbook 第 10 节包含可用的恢复步骤，
-以及 “`kubectl apply` 不会自动删除 strategic patch 添加字段” 的注意事项。
+ConfigMap/Secret，并重启 Broker。恢复后先检查对象内容和 Broker 健康状态，再恢复
+流量。注意 `kubectl apply` 不会自动删除 strategic patch 添加的字段，回滚后必须检查
+线上对象。
 
 ## 11. 相关文档
 
-- [Internal user credentials overview](internal-user-credentials-overview.md)
-- [Architecture](internal-user-credentials-architecture.md)
-- [Mock e2e runbook](internal-user-credentials-mock-e2e.md)
-- [Approval adapter](internal-user-approval-adapter.md)
-- [Pluggable adapter](internal-user-credentials-pluggable-adapter.md)
-- [Administrator CLI](internal-user-admin-cli.md)
-- [User CLI](internal-user-credentials-cli.md)
+- [系统概览](internal-user-credentials-overview.zh-CN.md)
+- [实现架构](internal-user-credentials-architecture.zh-CN.md)
+- [E2E 测试 TODO](internal-user-credentials-e2e-todo.zh-CN.md)
+- [审批适配器](internal-user-approval-adapter.zh-CN.md)
+- [Sealos Access CLI](sealos-access-cli.zh-CN.md)

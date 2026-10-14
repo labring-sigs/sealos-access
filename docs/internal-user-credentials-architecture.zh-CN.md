@@ -1,17 +1,12 @@
 # Internal User 凭证系统架构
 
-状态：InternalUser 凭证系统的实现架构文档。本文件描述当前仓库中的代码
-和部署形态，是
-[`internal-user-credentials-design.md`](internal-user-credentials-design.md)
-的架构配套文档，不代表生产批准。验收矩阵和执行状态记录在
-[`internal-user-credentials-acceptance.md`](internal-user-credentials-acceptance.md)、
-和 [`internal-user-credentials-acceptance-status.md`](internal-user-credentials-acceptance-status.md)。
+状态：InternalUser 凭证系统的当前实现架构文档。本文件描述当前仓库中的代码
+和部署形态。历史设计决策已经合并到本文；本文不代表生产批准。尚未完成的
+验证工作记录在 [E2E 测试 TODO](internal-user-credentials-e2e-todo.zh-CN.md)
+和 [多集群 Broker TODO](internal-user-credentials-multi-cluster-todo.zh-CN.md) 中。
 
 英文主文档为
 [`internal-user-credentials-architecture.md`](internal-user-credentials-architecture.md)。
-
-CLI 合并计划见
-[`sealos-access-cli-merge-plan.zh-CN.md`](sealos-access-cli-merge-plan.zh-CN.md)。
 
 ## 1. 目的与边界
 
@@ -649,14 +644,11 @@ approval reference 会存储在 lease 中，并出现在审批审计事件里以
 - ClusterRoleBinding admission：`./pkg/rbacadmission/`；
 - 审批适配器、经过认证的 OIDC client 和通知：
   `./pkg/approvaladapter/`；
-- 用户和管理员 CLI 源码（当前仍拆分，合并目标见计划）：
+- 用户和管理员 CLI 源码及统一入口：
   `./cmd/sealos-access/`，命令实现位于
   `./internal/access/`；
 - 组件部署包：`./config/`。
 
 运维命令示例和配置文件约定见
-[`internal-user-credentials-cli.md`](internal-user-credentials-cli.md)、
-[`internal-user-admin-cli.md`](internal-user-admin-cli.md) 和
-[`internal-user-approval-adapter.md`](internal-user-approval-adapter.md)。
-命令合并和安全验收标准见
-[`sealos-access-cli-merge-plan.zh-CN.md`](sealos-access-cli-merge-plan.zh-CN.md)。
+[`sealos-access-cli.zh-CN.md`](sealos-access-cli.zh-CN.md)、
+[`internal-user-approval-adapter.zh-CN.md`](internal-user-approval-adapter.zh-CN.md)。
