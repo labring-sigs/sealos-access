@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailhog
+  namespace: access-mock
+  labels:
+    app.kubernetes.io/name: mailhog
+    app.kubernetes.io/part-of: internal-user-credentials
+    app.kubernetes.io/component: mock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mailhog
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mailhog
+        app.kubernetes.io/part-of: internal-user-credentials
+        app.kubernetes.io/component: mock
+    spec:
+      terminationGracePeriodSeconds: 10
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mailhog
+          image: mailhog/mailhog:latest
+          ports:
+            - name: smtp
+              containerPort: 1025
+              protocol: TCP
+            - name: http
+              containerPort: 8025
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 32Mi
+          securityContext:
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true

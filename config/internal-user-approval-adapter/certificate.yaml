@@ -1,0 +1,22 @@
+# Copyright 2026 labring.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: internal-credential-approval-adapter-selfsigned
+  namespace: access-approval-system
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: internal-credential-approval-adapter-tls
+  namespace: access-approval-system
+spec:
+  secretName: internal-credential-approval-adapter-tls
+  dnsNames:
+  - internal-credential-approval-adapter.access-approval-system.svc
+  - internal-credential-approval-adapter.access-approval-system.svc.cluster.local
+  issuerRef:
+    name: internal-credential-approval-adapter-selfsigned
+    kind: Issuer

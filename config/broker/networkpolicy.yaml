@@ -1,0 +1,102 @@
+# Copyright 2026 labring.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-credential-broker-default-deny
+  namespace: access-broker-system
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-credential-broker-higress-ingress
+  namespace: access-broker-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: internal-credential-broker
+  policyTypes: [Ingress]
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: higress-system
+      podSelector:
+        matchLabels:
+          app: higress-gateway
+          higress: higress-system-higress-gateway
+    ports:
+    - protocol: TCP
+      port: 8443
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: access-approval-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: internal-credential-approval-adapter
+    ports:
+    - protocol: TCP
+      port: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: internal-credential-broker-controlled-egress
+  namespace: access-broker-system
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: internal-credential-broker
+  policyTypes: [Egress]
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Keep every non-DNS destination installation-specific and exact. The
+  # acceptance cluster uses the Kubernetes Service IP below for in-cluster
+  # client traffic and the control-plane address for the configured issuer.
+  - to:
+    - ipBlock:
+        cidr: 10.192.0.1/32
+    ports:
+    - protocol: TCP
+      port: 443
+  - to:
+    - ipBlock:
+        cidr: 192.168.128.123/32
+    ports:
+    - protocol: TCP
+      port: 30443
+  # The acceptance OIDC service hosts discovery and JWKS. A pod selector is
+  # preferred here so a changing endpoint Pod IP does not widen the policy.
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: access-broker-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: acceptance-oidc
+    ports:
+    - protocol: TCP
+      port: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: access-system-default-deny
+  namespace: access-system
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]

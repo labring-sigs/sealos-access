@@ -1,0 +1,9 @@
+# Copyright 2026 labring.
+resources:
+- namespace.yaml
+- serviceaccount.yaml
+- configmap.yaml
+- certificate.yaml
+- deployment.yaml
+- service.yaml
+- networkpolicy.yaml

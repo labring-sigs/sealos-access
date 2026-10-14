@@ -1,0 +1,9 @@
+# Copyright 2026 labring.
+FROM scratch
+ARG TARGETARCH
+
+WORKDIR /
+USER 65532:65532
+
+COPY bin/internal-user-controller-$TARGETARCH /internal-user-controller
+ENTRYPOINT ["/internal-user-controller"]

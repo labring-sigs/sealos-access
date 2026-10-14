@@ -1,0 +1,9 @@
+# syntax=docker/dockerfile:1
+FROM scratch
+ARG TARGETARCH
+
+WORKDIR /
+USER 65532:65532
+
+COPY bin/internal-user-admission-$TARGETARCH /internal-user-admission
+ENTRYPOINT ["/internal-user-admission"]

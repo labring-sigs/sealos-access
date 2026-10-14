@@ -1,0 +1,13 @@
+# Copyright 2026 labring.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: internal-credential-broker
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: internal-credential-broker
+subjects:
+- kind: ServiceAccount
+  name: internal-credential-broker
+  namespace: access-broker-system

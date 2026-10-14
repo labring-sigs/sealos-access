@@ -1,0 +1,86 @@
+# Copyright 2026 labring.
+#
+# Apply this file once to each target cluster. It is intentionally not part of
+# config/broker/kustomization.yaml because the central Broker is deployed in a
+# different cluster and only receives the resulting ServiceAccount token.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: internal-credential-broker
+  namespace: access-broker-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: internal-credential-broker-target
+rules:
+- apiGroups: [user.sealos.io]
+  resources: [internalusers]
+  verbs: [get]
+- apiGroups: [authentication.k8s.io]
+  resources: [tokenreviews]
+  verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: internal-credential-broker-target
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: internal-credential-broker-target
+subjects:
+- kind: ServiceAccount
+  name: internal-credential-broker
+  namespace: access-broker-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: internal-credential-broker-leases
+  namespace: access-broker-system
+rules:
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases]
+  verbs: [get, create]
+- apiGroups: [user.sealos.io]
+  resources: [credentialleases/status]
+  verbs: [get, update, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: internal-credential-broker-leases
+  namespace: access-broker-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: internal-credential-broker-leases
+subjects:
+- kind: ServiceAccount
+  name: internal-credential-broker
+  namespace: access-broker-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: internal-credential-broker-tokenrequest
+  namespace: access-system
+rules:
+- apiGroups: [""]
+  resources: [serviceaccounts/token]
+  verbs: [create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: internal-credential-broker-tokenrequest
+  namespace: access-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: internal-credential-broker-tokenrequest
+subjects:
+- kind: ServiceAccount
+  name: internal-credential-broker
+  namespace: access-broker-system

@@ -1,0 +1,16 @@
+# Copyright 2026 labring.
+resources:
+- namespace.yaml
+- serviceaccount.yaml
+- clusterrole.yaml
+- clusterrolebinding.yaml
+- broker-role.yaml
+- broker-rolebinding.yaml
+- certificate.yaml
+- deployment.yaml
+- service.yaml
+- webhook.yaml
+
+commonLabels:
+  app.kubernetes.io/name: internal-user-admission
+  app.kubernetes.io/part-of: sealos

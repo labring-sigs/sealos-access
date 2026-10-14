@@ -1,0 +1,72 @@
+# Copyright 2026 labring.
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: internal-user-controller-mutating
+  annotations:
+    cert-manager.io/inject-ca-from: access-controller-system/internal-user-controller-webhook-cert
+webhooks:
+- name: minternaluser.internal-user.sealos.io
+  admissionReviewVersions: [v1]
+  failurePolicy: Fail
+  sideEffects: None
+  clientConfig:
+    service:
+      name: internal-user-controller-webhook
+      namespace: access-controller-system
+      path: /mutate-user-sealos-io-v1-internaluser
+  rules:
+  - apiGroups: [user.sealos.io]
+    apiVersions: [v1]
+    operations: [CREATE, UPDATE]
+    resources: [internalusers]
+- name: mcredentiallease.internal-user.sealos.io
+  admissionReviewVersions: [v1]
+  failurePolicy: Fail
+  sideEffects: None
+  clientConfig:
+    service:
+      name: internal-user-controller-webhook
+      namespace: access-controller-system
+      path: /mutate-user-sealos-io-v1-credentiallease
+  rules:
+  - apiGroups: [user.sealos.io]
+    apiVersions: [v1]
+    operations: [CREATE, UPDATE]
+    resources: [credentialleases]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: internal-user-controller-validating
+  annotations:
+    cert-manager.io/inject-ca-from: access-controller-system/internal-user-controller-webhook-cert
+webhooks:
+- name: vinternaluser.internal-user.sealos.io
+  admissionReviewVersions: [v1]
+  failurePolicy: Fail
+  sideEffects: None
+  clientConfig:
+    service:
+      name: internal-user-controller-webhook
+      namespace: access-controller-system
+      path: /validate-user-sealos-io-v1-internaluser
+  rules:
+  - apiGroups: [user.sealos.io]
+    apiVersions: [v1]
+    operations: [CREATE, UPDATE, DELETE]
+    resources: [internalusers]
+- name: vcredentiallease.internal-user.sealos.io
+  admissionReviewVersions: [v1]
+  failurePolicy: Fail
+  sideEffects: None
+  clientConfig:
+    service:
+      name: internal-user-controller-webhook
+      namespace: access-controller-system
+      path: /validate-user-sealos-io-v1-credentiallease
+  rules:
+  - apiGroups: [user.sealos.io]
+    apiVersions: [v1]
+    operations: [CREATE, UPDATE, DELETE]
+    resources: [credentialleases]

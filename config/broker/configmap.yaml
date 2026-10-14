@@ -1,0 +1,45 @@
+# Copyright 2026 labring.
+# Replace every placeholder and source CIDR before applying this manifest.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: internal-credential-broker-config
+  namespace: access-broker-system
+data:
+  config-file: /etc/broker/config/broker.yaml
+  broker.yaml: |
+    version: 1
+    oidc:
+      issuer: https://replace-with-allowlisted-oidc-issuer.example
+      audience: sealos-internal-credential-broker
+      jwksURL: ""
+      caFile: /etc/broker/oidc-ca/ca.crt
+      serverName: ""
+    targets:
+    - id: replace-with-target-id
+      apiServer: https://replace-with-target-api.example
+      clusterServer: https://replace-with-target-public-api.example
+      caFile: /etc/broker/targets/replace-with-target-id.ca.crt
+      credentialFile: /etc/broker/targets/replace-with-target-id.token
+      kubernetesAudience: https://kubernetes.default.svc.cluster.local
+      userNamespace: access-system
+      brokerNamespace: access-broker-system
+      clusterName: replace-with-target-id
+      enabled: true
+    - id: replace-with-second-target-id
+      apiServer: https://replace-with-second-target-api.example
+      clusterServer: https://replace-with-second-target-public-api.example
+      caFile: /etc/broker/targets/replace-with-second-target-id.ca.crt
+      credentialFile: /etc/broker/targets/replace-with-second-target-id.token
+      kubernetesAudience: https://kubernetes.default.svc.cluster.local
+      userNamespace: access-system
+      brokerNamespace: access-broker-system
+      clusterName: replace-with-second-target-id
+      enabled: true
+  request-rate-limit: "10"
+  request-rate-burst: "20"
+  trusted-proxy-cidrs: 10.0.0.0/8
+  allowed-client-cidrs: 10.0.0.0/8
+  trusted-client-ip-header: X-Trusted-Client-IP
+  tls-cert-file: /etc/broker/tls/tls.crt
+  tls-key-file: /etc/broker/tls/tls.key
