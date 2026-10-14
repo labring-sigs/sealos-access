@@ -1,0 +1,281 @@
+name: Build and publish images
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAMESPACE: ${{ github.repository }}
+
+jobs:
+  changes:
+    name: Detect changed images
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      images: ${{ steps.matrix.outputs.images }}
+      make_targets: ${{ steps.matrix.outputs.make_targets }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build image matrix
+        id: matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          REF_TYPE: ${{ github.ref_type }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          broker_changed=false
+          controller_changed=false
+          admission_changed=false
+          adapter_changed=false
+          cli_changed=false
+          oidc_changed=false
+          approval_changed=false
+
+          mark_core_images() {
+            broker_changed=true
+            controller_changed=true
+            admission_changed=true
+            adapter_changed=true
+            cli_changed=true
+          }
+
+          mark_binary_images() {
+            broker_changed=true
+            controller_changed=true
+            admission_changed=true
+            cli_changed=true
+          }
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] || [ "$REF_TYPE" = "tag" ]; then
+            mark_core_images
+            oidc_changed=true
+            approval_changed=true
+          else
+            base="$BEFORE"
+            zero_sha=0000000000000000000000000000000000000000
+            if [ -z "$base" ] || [ "$base" = "$zero_sha" ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+              if git rev-parse HEAD^ >/dev/null 2>&1; then
+                base="$(git rev-parse HEAD^)"
+              else
+                base=""
+              fi
+            fi
+
+            if [ -n "$base" ]; then
+              mapfile -t changed_files < <(git diff --name-only "$base" "$SHA")
+            else
+              mapfile -t changed_files < <(git ls-files)
+            fi
+
+            for path in "${changed_files[@]}"; do
+              case "$path" in
+                .dockerignore)
+                  mark_core_images
+                  oidc_changed=true
+                  approval_changed=true
+                  ;;
+                Makefile)
+                  mark_binary_images
+                  ;;
+                go.mod|go.sum)
+                  mark_binary_images
+                  adapter_changed=true
+                  approval_changed=true
+                  ;;
+                Dockerfile.broker|cmd/broker/*)
+                  broker_changed=true
+                  ;;
+                Dockerfile.internal-user-controller|cmd/internal-user-controller/*|controllers/*)
+                  controller_changed=true
+                  ;;
+                Dockerfile.internal-user-admission|cmd/internal-user-admission/*|pkg/rbacadmission/*)
+                  admission_changed=true
+                  ;;
+                Dockerfile.internal-user-approval-adapter|cmd/internal-user-approval-adapter/*|pkg/approvaladapter/*)
+                  adapter_changed=true
+                  ;;
+                Dockerfile.cli|cmd/sealos-access/*|internal/*)
+                  cli_changed=true
+                  ;;
+                api/*|pkg/internalcredentials/*)
+                  mark_core_images
+                  ;;
+                pkg/broker/*)
+                  broker_changed=true
+                  adapter_changed=true
+                  cli_changed=true
+                  ;;
+                test/mock/oidc-provider/Dockerfile|test/mock/oidc-provider/server.go|test/mock/oidc-provider/cmd/test-oidc/*)
+                  oidc_changed=true
+                  ;;
+                test/mock/approval-server/Dockerfile|test/mock/approval-server/main.go)
+                  approval_changed=true
+                  ;;
+              esac
+            done
+          fi
+
+          matrix=[]
+          make_targets=""
+
+          append_target() {
+            local target="$1"
+            case " $make_targets " in
+              *" $target "*) return ;;
+            esac
+            if [ -n "$make_targets" ]; then
+              make_targets="$make_targets "
+            fi
+            make_targets="$make_targets$target"
+          }
+
+          append_image() {
+            matrix="$(jq -cn \
+              --argjson current "$matrix" \
+              --arg image "$1" \
+              --arg file "$2" \
+              --arg binary "$3" \
+              '$current + [{image: $image, file: $file, binary: $binary}]')"
+          }
+
+          if [ "$broker_changed" = true ]; then
+            append_image sealos-internal-credential-broker Dockerfile.broker broker
+            append_target build-broker
+          fi
+          if [ "$controller_changed" = true ]; then
+            append_image sealos-internal-user-controller Dockerfile.internal-user-controller internal-user-controller
+            append_target build-internal-user-controller
+          fi
+          if [ "$admission_changed" = true ]; then
+            append_image sealos-internal-user-admission Dockerfile.internal-user-admission internal-user-admission
+            append_target build-internal-user-admission
+          fi
+          if [ "$adapter_changed" = true ]; then
+            append_image sealos-internal-user-approval-adapter Dockerfile.internal-user-approval-adapter ""
+          fi
+          if [ "$cli_changed" = true ]; then
+            append_image sealos-access Dockerfile.cli sealos-access
+            append_target build-sealos-access
+          fi
+          if [ "$oidc_changed" = true ]; then
+            append_image sealos-test-oidc-provider test/mock/oidc-provider/Dockerfile ""
+          fi
+          if [ "$approval_changed" = true ]; then
+            append_image sealos-mock-approval-server test/mock/approval-server/Dockerfile ""
+          fi
+
+          printf 'images=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+          printf 'make_targets=%s\n' "$make_targets" >> "$GITHUB_OUTPUT"
+          printf 'Selected images: %s\n' "$matrix"
+
+  binaries:
+    if: ${{ needs.changes.outputs.make_targets != '' }}
+    needs: changes
+    name: Build Linux binaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binaries
+        run: make ${{ needs.changes.outputs.make_targets }} TARGETARCH=amd64 GOOS=linux
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-amd64-binaries
+          path: bin/
+          if-no-files-found: error
+          retention-days: 1
+
+  images:
+    if: ${{ always() && needs.changes.result == 'success' && needs.changes.outputs.images != '[]' && (needs.binaries.result == 'success' || needs.binaries.result == 'skipped') }}
+    needs:
+      - changes
+      - binaries
+    name: Build ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.changes.outputs.images) }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Download binaries
+        if: matrix.binary != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-amd64-binaries
+          path: bin
+
+      - name: Restore executable permissions
+        if: matrix.binary != ''
+        run: chmod +x bin/*
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ matrix.image }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          platforms: linux/amd64
+          build-args: |
+            TARGETARCH=amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}

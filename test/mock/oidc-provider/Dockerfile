@@ -1,7 +1,7 @@
 FROM golang:1.25-alpine AS build
 
 WORKDIR /src
-RUN printf 'module github.com/labring/sealos/controllers/user\n\ngo 1.25\n' > go.mod
+RUN printf 'module github.com/labring-sigs/sealos-access\n\ngo 1.25\n' > go.mod
 COPY test/mock/oidc-provider/server.go ./test/mock/oidc-provider/server.go
 COPY test/mock/oidc-provider/cmd/test-oidc/main.go ./test/mock/oidc-provider/cmd/test-oidc/main.go
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/test-oidc ./test/mock/oidc-provider/cmd/test-oidc
